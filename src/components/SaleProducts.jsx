@@ -65,35 +65,77 @@ const SaleProducts = () => {
   };
 
   // Convert device-uploaded images to the backend URL while keeping URL images unchanged.
-  const getImageUrl = (image) => {
-    if (!image || typeof image !== "string") {
-      return "/placeholder.jpg";
-    }
+  // const getImageUrl = (image) => {
+  //   if (!image || typeof image !== "string") {
+  //     return "/placeholder.jpg";
+  //   }
 
-    const trimmedImage = image.trim();
+  //   const trimmedImage = image.trim();
 
-    if (!trimmedImage) {
-      return "/placeholder.jpg";
-    }
+  //   if (!trimmedImage) {
+  //     return "/placeholder.jpg";
+  //   }
 
-    if (
-      trimmedImage.startsWith("http://") ||
-      trimmedImage.startsWith("https://") ||
-      trimmedImage.startsWith("data:")
-    ) {
-      return trimmedImage;
-    }
+  //   if (
+  //     trimmedImage.startsWith("http://") ||
+  //     trimmedImage.startsWith("https://") ||
+  //     trimmedImage.startsWith("data:")
+  //   ) {
+  //     return trimmedImage;
+  //   }
 
-    const normalizedPath = trimmedImage.startsWith("/")
-      ? trimmedImage
-      : `/${trimmedImage}`;
+  //   const normalizedPath = trimmedImage.startsWith("/")
+  //     ? trimmedImage
+  //     : `/${trimmedImage}`;
 
-    if (normalizedPath.startsWith("/uploads/")) {
-      return `http://localhost:5050${normalizedPath}`;
-    }
+  //   if (normalizedPath.startsWith("/uploads/")) {
+  //     return `http://localhost:5050${normalizedPath}`;
+  //   }
 
+  //   return trimmedImage;
+  // };
+
+
+const getImageUrl = (image) => {
+  if (!image || typeof image !== "string") {
+    return "/placeholder.jpg";
+  }
+
+  const trimmedImage = image.trim();
+
+  if (!trimmedImage) {
+    return "/placeholder.jpg";
+  }
+
+  if (
+    trimmedImage.startsWith("http://") ||
+    trimmedImage.startsWith("https://") ||
+    trimmedImage.startsWith("data:")
+  ) {
     return trimmedImage;
-  };
+  }
+
+  const normalizedPath = trimmedImage.startsWith("/")
+    ? trimmedImage
+    : `/${trimmedImage}`;
+
+  if (normalizedPath.startsWith("/uploads/")) {
+    const backendUrl = (
+      import.meta.env.VITE_API_URL ||
+      "http://localhost:5050"
+    ).replace(/\/$/, "");
+
+    return `${backendUrl}${normalizedPath}`;
+  }
+
+  return trimmedImage;
+};
+
+
+
+
+
+
 
   const handleAddToCart = (product) => {
     addToCart(product);

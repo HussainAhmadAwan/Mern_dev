@@ -18,6 +18,52 @@ const Navbar = () => {
     isLoggedIn,
   } = useAuth();
 
+  // =========================================================
+  // API BASE URL
+  // =========================================================
+
+  const API_BASE_URL =
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:5050";
+
+  // =========================================================
+  // IMAGE URL HELPER
+  // =========================================================
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) {
+      return "";
+    }
+
+    // External image URL
+    if (
+      imagePath.startsWith("http://") ||
+      imagePath.startsWith("https://") ||
+      imagePath.startsWith("data:")
+    ) {
+      return imagePath;
+    }
+
+    // Backend uploaded image
+    if (
+      imagePath.startsWith("/uploads/") ||
+      imagePath.startsWith("uploads/")
+    ) {
+      const cleanPath =
+        imagePath.startsWith("/")
+          ? imagePath
+          : `/${imagePath}`;
+
+      return `${API_BASE_URL}${cleanPath}`;
+    }
+
+    return imagePath;
+  };
+
+  // =========================================================
+  // MENUS
+  // =========================================================
+
   const [
     profileMenuOpen,
     setProfileMenuOpen,
@@ -28,19 +74,20 @@ const Navbar = () => {
     setMobileMenuOpen,
   ] = React.useState(false);
 
-  // Search text entered by the user.
+  // =========================================================
+  // SEARCH
+  // =========================================================
+
   const [
     searchText,
     setSearchText,
   ] = React.useState("");
 
-  // Store products for live search suggestions.
   const [
     products,
     setProducts,
   ] = React.useState([]);
 
-  // Control the search suggestions dropdown.
   const [
     searchOpen,
     setSearchOpen,
@@ -141,7 +188,10 @@ const Navbar = () => {
     );
   };
 
-  // Open a product selected from the search suggestions.
+  // =========================================================
+  // PRODUCT SEARCH RESULT CLICK
+  // =========================================================
+
   const handleProductClick = (
     productId
   ) => {
@@ -174,7 +224,7 @@ const Navbar = () => {
       return "light";
     });
 
-  // Apply theme to the document.
+  // Apply theme
   React.useEffect(() => {
     const root =
       window.document
@@ -194,7 +244,7 @@ const Navbar = () => {
     );
   }, [theme]);
 
-  // Toggle between light and dark mode.
+  // Toggle theme
   const toggleTheme = () => {
     setTheme((previous) =>
       previous === "light"
@@ -203,7 +253,10 @@ const Navbar = () => {
     );
   };
 
-  // Logout the current user.
+  // =========================================================
+  // LOGOUT
+  // =========================================================
+
   const handleLogout = () => {
     logout();
 
@@ -212,7 +265,10 @@ const Navbar = () => {
     setSearchOpen(false);
   };
 
-  // Close mobile menu after navigation.
+  // =========================================================
+  // CLOSE MOBILE MENU
+  // =========================================================
+
   const handleMobileLinkClick =
     () => {
       setMobileMenuOpen(false);
@@ -224,13 +280,14 @@ const Navbar = () => {
 
       <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
 
-        {/* =========================
+        {/* =================================================
             MAIN NAVBAR
-        ========================== */}
+        ================================================== */}
 
         <div className="flex h-16 items-center gap-3">
 
           {/* Logo */}
+
           <Link
             to="/"
             onClick={
@@ -249,7 +306,10 @@ const Navbar = () => {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* =================================================
+              DESKTOP NAVIGATION
+          ================================================== */}
+
           <nav
             aria-label="Global"
             className="ml-16 hidden xl:block"
@@ -313,14 +373,16 @@ const Navbar = () => {
             </ul>
           </nav>
 
-          {/* Desktop / Tablet Search */}
+          {/* =================================================
+              DESKTOP / TABLET SEARCH
+          ================================================== */}
+
           <form
             onSubmit={handleSearch}
             className="ml-auto hidden flex-1 lg:flex lg:max-w-xs xl:max-w-[220px] 2xl:max-w-[260px]"
           >
             <div className="relative w-full">
 
-              {/* Search input */}
               <input
                 type="text"
                 value={searchText}
@@ -342,7 +404,8 @@ const Navbar = () => {
                 className="w-full rounded-full bg-white px-4 py-2 pr-11 text-sm text-gray-800 outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-orange-500 dark:bg-slate-700 dark:text-white dark:placeholder:text-gray-400"
               />
 
-              {/* Search button */}
+              {/* Search Button */}
+
               <button
                 type="submit"
                 aria-label="Search products"
@@ -364,7 +427,8 @@ const Navbar = () => {
                 </svg>
               </button>
 
-              {/* Desktop search dropdown */}
+              {/* Desktop Search Dropdown */}
+
               {searchOpen &&
                 searchText.trim() && (
                   <div className="absolute left-0 right-0 top-full z-[100] mt-2 overflow-hidden rounded-xl bg-white shadow-xl dark:bg-slate-800">
@@ -388,13 +452,19 @@ const Navbar = () => {
                               className="flex w-full items-center gap-3 border-b border-gray-100 px-3 py-3 text-left transition hover:bg-gray-100 dark:border-slate-700 dark:hover:bg-slate-700"
                             >
                               <img
-                                src={
+                                src={getImageUrl(
                                   product.image
-                                }
+                                )}
                                 alt={
                                   product.name
                                 }
                                 className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                                onError={(
+                                  event
+                                ) => {
+                                  event.currentTarget.style.display =
+                                    "none";
+                                }}
                               />
 
                               <div className="min-w-0 flex-1">
@@ -446,10 +516,14 @@ const Navbar = () => {
             </div>
           </form>
 
-          {/* Right Side Controls */}
+          {/* =================================================
+              RIGHT SIDE CONTROLS
+          ================================================== */}
+
           <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 lg:ml-3">
 
             {/* Authentication - Desktop */}
+
             <div className="hidden xl:block">
 
               {!isLoggedIn ? (
@@ -474,6 +548,7 @@ const Navbar = () => {
                 <div className="relative">
 
                   {/* Profile Button */}
+
                   <button
                     type="button"
                     onClick={() =>
@@ -486,7 +561,9 @@ const Navbar = () => {
                   >
                     {user?.profilePicture ? (
                       <img
-                        src={`http://localhost:5050${user.profilePicture}`}
+                        src={getImageUrl(
+                          user.profilePicture
+                        )}
                         alt={
                           user.name ||
                           "Profile"
@@ -514,10 +591,10 @@ const Navbar = () => {
                   </button>
 
                   {/* Profile Dropdown */}
+
                   {profileMenuOpen && (
                     <div className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-lg bg-white shadow-xl dark:bg-slate-800">
 
-                      {/* Profile */}
                       <Link
                         to="/profile"
                         onClick={() =>
@@ -530,7 +607,6 @@ const Navbar = () => {
                         👤 Profile
                       </Link>
 
-                      {/* My Orders */}
                       <Link
                         to="/orders"
                         onClick={() =>
@@ -543,7 +619,6 @@ const Navbar = () => {
                         📦 My Orders
                       </Link>
 
-                      {/* Logout */}
                       <button
                         type="button"
                         onClick={
@@ -563,6 +638,7 @@ const Navbar = () => {
             </div>
 
             {/* Theme Toggle */}
+
             <button
               type="button"
               onClick={toggleTheme}
@@ -596,13 +672,14 @@ const Navbar = () => {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M12 3v2.25m0 13.5V21M4.978 4.978l1.59 1.59m10.864 10.864l1.59 1.59m-18-5.714h2.25m13.5 0H21M6.568 17.432l-1.59 1.59m14.04-14.04l1.59 1.59M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z"
+                    d="M12 3v2.25m0 13.5V21M4.978 4.978l1.59 1.59m10.864 10.864 1.59 1.59m-18-5.714h2.25m13.5 0H21M6.568 17.432l-1.59 1.59m14.04-14.04 1.59 1.59M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z"
                   />
                 </svg>
               )}
             </button>
 
             {/* Cart */}
+
             <Link
               to="/cart"
               className="relative flex items-center rounded-lg p-2 text-white transition hover:bg-gray-800"
@@ -619,7 +696,7 @@ const Navbar = () => {
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M2.25 3h1.386c.51 0 .955.343 1.086.836l.383 1.437m0 0L6.75 15.75h10.5l2.25-8.25H5.105m0 0L4.722 6.063M6.75 15.75a1.5 1.5 0 0 0-1.5-1.5v.75h13.5V17.25a1.5 1.5 0 0 0-1.5-1.5M9 20.25h.008v.008H9v-.008Zm6 0h.008v.008H15v-.008Z"
+                  d="M2.25 3h1.386c.51 0 .955.343 1.086.836l.383 1.437m0 0L6.75 15.75h10.5l2.25-8.25H5.105m0 0L4.722 6.063M6.75 15.75a1.5 1.5 0 0 1-1.5-1.5v.75h13.5V17.25a1.5 1.5 0 0 1-1.5-1.5M9 20.25h.008v.008H9v-.008Zm6 0h.008v.008H15v-.008Z"
                 />
               </svg>
 
@@ -631,6 +708,7 @@ const Navbar = () => {
             </Link>
 
             {/* Mobile Menu Button */}
+
             <button
               type="button"
               onClick={() =>
@@ -681,17 +759,17 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* =========================
+        {/* =================================================
             MOBILE / TABLET MENU
-        ========================== */}
+        ================================================== */}
 
         {mobileMenuOpen && (
           <div className="border-t border-gray-800 py-3 xl:hidden">
 
-            {/* Compact mobile menu container */}
             <div className="w-full max-w-sm">
 
               {/* Mobile Search */}
+
               <form
                 onSubmit={
                   handleSearch
@@ -726,7 +804,8 @@ const Navbar = () => {
                     className="w-full rounded-lg bg-white px-4 py-2.5 pr-12 text-sm text-gray-800 outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-orange-500 dark:bg-slate-700 dark:text-white"
                   />
 
-                  {/* Mobile search button */}
+                  {/* Mobile Search Button */}
+
                   <button
                     type="submit"
                     className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg bg-orange-600 text-white hover:bg-orange-700"
@@ -748,7 +827,8 @@ const Navbar = () => {
                     </svg>
                   </button>
 
-                  {/* Mobile search dropdown */}
+                  {/* Mobile Search Dropdown */}
+
                   {searchOpen &&
                     searchText.trim() && (
                       <div className="absolute left-0 right-0 top-full z-[100] mt-2 overflow-hidden rounded-xl bg-white shadow-xl dark:bg-slate-800">
@@ -774,13 +854,19 @@ const Navbar = () => {
                                   className="flex w-full items-center gap-3 border-b border-gray-100 px-3 py-3 text-left transition hover:bg-gray-100 dark:border-slate-700 dark:hover:bg-slate-700"
                                 >
                                   <img
-                                    src={
+                                    src={getImageUrl(
                                       product.image
-                                    }
+                                    )}
                                     alt={
                                       product.name
                                     }
                                     className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                                    onError={(
+                                      event
+                                    ) => {
+                                      event.currentTarget.style.display =
+                                        "none";
+                                    }}
                                   />
 
                                   <div className="min-w-0 flex-1">
@@ -832,10 +918,12 @@ const Navbar = () => {
                 </div>
               </form>
 
-              {/* Navigation */}
+              {/* =================================================
+                  NAVIGATION
+              ================================================== */}
+
               <nav aria-label="Mobile Navigation">
 
-                {/* One-column navigation */}
                 <div className="flex flex-col gap-1">
 
                   <Link
@@ -901,7 +989,10 @@ const Navbar = () => {
                 </div>
               </nav>
 
-              {/* Authentication */}
+              {/* =================================================
+                  AUTHENTICATION
+              ================================================== */}
+
               <div className="mt-3 border-t border-gray-800 pt-3">
 
                 {!isLoggedIn ? (
@@ -931,7 +1022,8 @@ const Navbar = () => {
                 ) : (
                   <div className="space-y-2">
 
-                    {/* Mobile profile */}
+                    {/* Mobile Profile */}
+
                     <Link
                       to="/profile"
                       onClick={
@@ -941,7 +1033,9 @@ const Navbar = () => {
                     >
                       {user?.profilePicture ? (
                         <img
-                          src={`http://localhost:5050${user.profilePicture}`}
+                          src={getImageUrl(
+                            user.profilePicture
+                          )}
                           alt={
                             user.name ||
                             "Profile"
@@ -965,6 +1059,7 @@ const Navbar = () => {
                     </Link>
 
                     {/* Mobile My Orders */}
+
                     <Link
                       to="/orders"
                       onClick={
@@ -975,7 +1070,8 @@ const Navbar = () => {
                       📦 My Orders
                     </Link>
 
-                    {/* Mobile logout */}
+                    {/* Mobile Logout */}
+
                     <button
                       type="button"
                       onClick={
@@ -990,7 +1086,6 @@ const Navbar = () => {
                 )}
 
               </div>
-
             </div>
           </div>
         )}

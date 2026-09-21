@@ -43,24 +43,36 @@ const ProductDetails = () => {
   const [error, setError] = useState("");
 
   // Convert uploaded image paths into usable browser URLs.
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) {
-      return "";
-    }
-
-    if (
-      imagePath.startsWith("http://") ||
-      imagePath.startsWith("https://")
-    ) {
-      return imagePath;
-    }
-
-    if (imagePath.startsWith("/uploads/")) {
-      return `http://localhost:5050${imagePath}`;
-    }
-
-    return imagePath;
-  };
+      const getImageUrl = (imagePath) => {
+      if (!imagePath) {
+        return "";
+      }
+    
+      const image = String(imagePath).trim();
+    
+      if (
+        image.startsWith("http://") ||
+        image.startsWith("https://") ||
+        image.startsWith("data:")
+      ) {
+        return image;
+      }
+    
+      const backendUrl = (
+        import.meta.env.VITE_API_URL ||
+        "http://localhost:5050"
+      ).replace(/\/$/, "");
+    
+      if (image.startsWith("/uploads/")) {
+        return `${backendUrl}${image}`;
+      }
+    
+      if (image.startsWith("uploads/")) {
+        return `${backendUrl}/${image}`;
+      }
+    
+      return image;
+    };
 
   // Fetch product from MongoDB.
   useEffect(() => {

@@ -88,30 +88,36 @@ const Products = () => {
   };
 
   // Convert backend upload paths into browser-ready image URLs.
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) {
-      return "";
-    }
-
-    const image = String(imagePath).trim();
-
-    if (
-      image.startsWith("http://") ||
-      image.startsWith("https://")
-    ) {
-      return image;
-    }
-
-    if (image.startsWith("/uploads/")) {
-      return `http://localhost:5050${image}`;
-    }
-
-    if (image.startsWith("uploads/")) {
-      return `http://localhost:5050/${image}`;
-    }
-
-    return image;
-  };
+     const getImageUrl = (imagePath) => {
+       if (!imagePath) {
+         return "";
+       }
+     
+       const image = String(imagePath).trim();
+     
+       if (
+         image.startsWith("http://") ||
+         image.startsWith("https://") ||
+         image.startsWith("data:")
+       ) {
+         return image;
+       }
+     
+       const backendUrl = (
+         import.meta.env.VITE_API_URL ||
+         "http://localhost:5050"
+       ).replace(/\/$/, "");
+     
+       if (image.startsWith("/uploads/")) {
+         return `${backendUrl}${image}`;
+       }
+     
+       if (image.startsWith("uploads/")) {
+         return `${backendUrl}/${image}`;
+       }
+     
+       return image;
+     };
 
   // Apply search, category, and sale filters.
   const filteredProducts = products.filter(
