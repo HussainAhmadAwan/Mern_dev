@@ -1,27 +1,39 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+} from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import {
   useCart,
   getProductPrice,
 } from "../context/CartContext";
+
 import api from "../api/axios";
+
 import { useAuth } from "../context/AuthContext";
 
 // Generate a short frontend OrderID.
 const generateOrderId = () => {
   const bytes = new Uint8Array(4);
 
-  window.crypto.getRandomValues(bytes);
+  window.crypto.getRandomValues(
+    bytes
+  );
 
   return Array.from(bytes)
     .map((byte) =>
-      byte.toString(16).padStart(2, "0")
+      byte
+        .toString(16)
+        .padStart(2, "0")
     )
     .join("");
 };
 
 const Checkout = () => {
   const navigate = useNavigate();
+
   const { user } = useAuth();
 
   const {
@@ -55,23 +67,46 @@ const Checkout = () => {
   const [loading, setLoading] =
     useState(false);
 
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    address: "",
-    city: "",
-    zipCode: "",
-    payment: "Cash on Delivery",
-  });
+  // ======================================================
+  // COUPON STATE
+  // ======================================================
 
-  // ==========================================
+  const [couponCode, setCouponCode] =
+    useState("");
+
+  const [appliedCoupon, setAppliedCoupon] =
+    useState(null);
+
+  const [couponLoading, setCouponLoading] =
+    useState(false);
+
+  const [couponError, setCouponError] =
+    useState("");
+
+  const [couponSuccess, setCouponSuccess] =
+    useState("");
+
+  const [formData, setFormData] =
+    useState({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      address: "",
+      city: "",
+      zipCode: "",
+      payment:
+        "Cash on Delivery",
+    });
+
+  // ======================================================
   // FETCH LATEST INVENTORY
-  // ==========================================
+  // ======================================================
 
   const fetchInventory = async () => {
-    if (checkoutItems.length === 0) {
+    if (
+      checkoutItems.length === 0
+    ) {
       setInventoryItems([]);
       setInventoryLoading(false);
       return;
@@ -81,68 +116,83 @@ const Checkout = () => {
       setInventoryLoading(true);
       setInventoryError("");
 
-      const response = await api.get(
-        "/api/products"
-      );
+      const response =
+        await api.get(
+          "/api/products"
+        );
 
       const products =
-        response.data.products || [];
+        response.data.products ||
+        [];
 
-      const productMap = new Map(
-        products.map((product) => [
-          String(product._id),
-          product,
-        ])
-      );
+      const productMap =
+        new Map(
+          products.map(
+            (product) => [
+              String(product._id),
+              product,
+            ]
+          )
+        );
 
       const latestInventory =
-        checkoutItems.map((item) => {
-          const latestProduct =
-            productMap.get(
-              String(item._id)
-            );
+        checkoutItems.map(
+          (item) => {
+            const latestProduct =
+              productMap.get(
+                String(item._id)
+              );
 
-          if (!latestProduct) {
+            if (!latestProduct) {
+              return {
+                ...item,
+                stock: 0,
+                inventoryUnavailable:
+                  true,
+                inventoryMessage:
+                  "This product is no longer available.",
+              };
+            }
+
+            const latestStock =
+              Math.max(
+                0,
+                Number(
+                  latestProduct.stock ||
+                    0
+                )
+              );
+
+            const requestedQuantity =
+              Math.max(
+                1,
+                Number(
+                  item.quantity || 1
+                )
+              );
+
             return {
               ...item,
-              stock: 0,
-              inventoryUnavailable: true,
+              ...latestProduct,
+              requestedQuantity,
+              stock: latestStock,
+              inventoryUnavailable:
+                latestStock <
+                requestedQuantity,
               inventoryMessage:
-                "This product is no longer available.",
+                latestStock === 0
+                  ? "This product is currently out of stock."
+                  : latestStock <
+                    requestedQuantity
+                  ? `Only ${latestStock} ${
+                      latestStock === 1
+                        ? "item is"
+                        : "items are"
+                    } currently available.`
+                  : "",
             };
           }
-
-          const latestStock = Math.max(
-            0,
-            Number(latestProduct.stock || 0)
-          );
-
-          const requestedQuantity =
-            Math.max(
-              1,
-              Number(item.quantity || 1)
-            );
-
-          return {
-            ...item,
-            ...latestProduct,
-            requestedQuantity,
-            stock: latestStock,
-            inventoryUnavailable:
-              latestStock < requestedQuantity,
-            inventoryMessage:
-              latestStock === 0
-                ? "This product is currently out of stock."
-                : latestStock <
-                  requestedQuantity
-                ? `Only ${latestStock} ${
-                    latestStock === 1
-                      ? "item is"
-                      : "items are"
-                  } currently available.`
-                : "",
-          };
-        });
+        );
 
       setInventoryItems(
         latestInventory
@@ -161,76 +211,89 @@ const Checkout = () => {
     }
   };
 
-  // ==========================================
-  // CHECK INVENTORY WHEN CHECKOUT CHANGES
-  // ==========================================
-
   useEffect(() => {
     fetchInventory();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buyNowItem, cartItems]);
 
-  // ==========================================
+  // ======================================================
   // LOAD DELIVERY SETTINGS
-  // ==========================================
+  // ======================================================
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        setSettingsLoading(true);
-
-        const response = await api.get(
-          "/settings"
-        );
-
-        if (response.data.success) {
-          const charge = Number(
-            response.data.settings
-              ?.deliveryCharge ?? 0
+    const fetchSettings =
+      async () => {
+        try {
+          setSettingsLoading(
+            true
           );
 
-          if (
-            Number.isFinite(charge) &&
-            charge >= 0
-          ) {
-            setDeliveryCharge(
-              Math.round(charge * 100) / 100
+          const response =
+            await api.get(
+              "/settings"
             );
-          } else {
-            setDeliveryCharge(0);
-          }
-        }
-      } catch (error) {
-        console.error(
-          "Failed to load delivery settings:",
-          error
-        );
 
-        setDeliveryCharge(0);
-      } finally {
-        setSettingsLoading(false);
-      }
-    };
+          if (
+            response.data.success
+          ) {
+            const charge =
+              Number(
+                response.data
+                  .settings
+                  ?.deliveryCharge ??
+                  0
+              );
+
+            if (
+              Number.isFinite(
+                charge
+              ) &&
+              charge >= 0
+            ) {
+              setDeliveryCharge(
+                Math.round(
+                  charge * 100
+                ) / 100
+              );
+            } else {
+              setDeliveryCharge(0);
+            }
+          }
+        } catch (error) {
+          console.error(
+            "Failed to load delivery settings:",
+            error
+          );
+
+          setDeliveryCharge(0);
+        } finally {
+          setSettingsLoading(
+            false
+          );
+        }
+      };
 
     fetchSettings();
   }, []);
 
-  // ==========================================
+  // ======================================================
   // CALCULATE TOTAL ITEMS
-  // ==========================================
+  // ======================================================
 
   const checkoutTotalItems =
     checkoutItems.reduce(
       (total, item) =>
         total +
-        Number(item.quantity || 0),
+        Number(
+          item.quantity || 0
+        ),
       0
     );
 
-  // ==========================================
+  // ======================================================
   // CALCULATE SUBTOTAL
-  // ==========================================
+  // ======================================================
 
   const checkoutSubtotal =
     checkoutItems.reduce(
@@ -241,7 +304,9 @@ const Checkout = () => {
         return (
           total +
           price *
-            Number(item.quantity || 0)
+            Number(
+              item.quantity || 0
+            )
         );
       },
       0
@@ -252,21 +317,35 @@ const Checkout = () => {
       checkoutSubtotal * 100
     ) / 100;
 
-  // ==========================================
-  // CALCULATE GRAND TOTAL
-  // ==========================================
+  // ======================================================
+  // COUPON DISCOUNT
+  // ======================================================
+
+  const couponDiscount = appliedCoupon
+    ? Number(
+        appliedCoupon.discountAmount ||
+          0
+      )
+    : 0;
+
+  // ======================================================
+  // GRAND TOTAL
+  // ======================================================
 
   const checkoutGrandTotal =
     Math.round(
       (
-        roundedCheckoutSubtotal +
-        Number(deliveryCharge || 0)
+        roundedCheckoutSubtotal -
+        couponDiscount +
+        Number(
+          deliveryCharge || 0
+        )
       ) * 100
     ) / 100;
 
-  // ==========================================
-  // CHECK INVENTORY PROBLEMS
-  // ==========================================
+  // ======================================================
+  // INVENTORY PROBLEMS
+  // ======================================================
 
   const hasInventoryProblem =
     inventoryItems.some(
@@ -274,29 +353,133 @@ const Checkout = () => {
         item.inventoryUnavailable
     );
 
-  // ==========================================
-  // UPDATE FORM
-  // ==========================================
+  // ======================================================
+  // FORM
+  // ======================================================
 
   const handleChange = (e) => {
-    setFormData((previous) => ({
-      ...previous,
-      [e.target.name]:
-        e.target.value,
-    }));
+    setFormData(
+      (previous) => ({
+        ...previous,
+        [e.target.name]:
+          e.target.value,
+      })
+    );
   };
 
-  // ==========================================
-  // PLACE ORDER
-  // ==========================================
+  // ======================================================
+  // APPLY COUPON
+  // ======================================================
 
-  const handleSubmit = async (e) => {
+  const handleApplyCoupon =
+    async () => {
+      const code =
+        couponCode.trim();
+
+      if (!code) {
+        setCouponError(
+          "Please enter a coupon code."
+        );
+        setCouponSuccess("");
+        return;
+      }
+
+      if (
+        roundedCheckoutSubtotal <=
+        0
+      ) {
+        setCouponError(
+          "Your order subtotal must be greater than 0."
+        );
+        setCouponSuccess("");
+        return;
+      }
+
+      try {
+        setCouponLoading(true);
+        setCouponError("");
+        setCouponSuccess("");
+
+        const response =
+          await api.post(
+            "/orders/validate-coupon",
+            {
+              code,
+              subtotal:
+                roundedCheckoutSubtotal,
+            }
+          );
+
+        if (
+          response.data.success
+        ) {
+          setAppliedCoupon(
+            response.data.coupon
+          );
+
+          setCouponCode(
+            response.data.coupon
+              .code
+          );
+
+          setCouponSuccess(
+            response.data.message ||
+              "Coupon applied successfully."
+          );
+        } else {
+          setAppliedCoupon(null);
+
+          setCouponError(
+            response.data.message ||
+              "Invalid coupon."
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Apply coupon error:",
+          error
+        );
+
+        setAppliedCoupon(null);
+
+        setCouponError(
+          error.response?.data
+            ?.message ||
+            "Failed to apply coupon."
+        );
+      } finally {
+        setCouponLoading(false);
+      }
+    };
+
+  // ======================================================
+  // REMOVE COUPON
+  // ======================================================
+
+  const handleRemoveCoupon =
+    () => {
+      setAppliedCoupon(null);
+      setCouponCode("");
+      setCouponError("");
+      setCouponSuccess("");
+    };
+
+  // ======================================================
+  // PLACE ORDER
+  // ======================================================
+
+  const handleSubmit = async (
+    e
+  ) => {
     e.preventDefault();
 
-    if (checkoutItems.length === 0) {
+    if (
+      checkoutItems.length === 0
+    ) {
       alert(
         "There are no products to checkout."
       );
+
       return;
     }
 
@@ -327,54 +510,56 @@ const Checkout = () => {
           )
         );
 
-      const inventoryProblems = [];
+      const inventoryProblems =
+        [];
 
-      checkoutItems.forEach((item) => {
-        const latestProduct =
-          latestProductMap.get(
-            String(item._id)
-          );
+      checkoutItems.forEach(
+        (item) => {
+          const latestProduct =
+            latestProductMap.get(
+              String(item._id)
+            );
 
-        if (!latestProduct) {
-          inventoryProblems.push(
-            `"${item.name}" is no longer available.`
-          );
-          return;
-        }
+          if (!latestProduct) {
+            inventoryProblems.push(
+              `"${item.name}" is no longer available.`
+            );
 
-        const latestStock =
-          Math.max(
-            0,
+            return;
+          }
+
+          const latestStock =
+            Math.max(
+              0,
+              Number(
+                latestProduct.stock ||
+                  0
+              )
+            );
+
+          const requestedQuantity =
             Number(
-              latestProduct.stock || 0
-            )
-          );
+              item.quantity || 0
+            );
 
-        const requestedQuantity =
-          Number(
-            item.quantity || 0
-          );
-
-        if (
-          latestStock <
-          requestedQuantity
-        ) {
-          inventoryProblems.push(
-            `"${latestProduct.name}": only ${latestStock} ${
-              latestStock === 1
-                ? "item is"
-                : "items are"
-            } available, but you requested ${requestedQuantity}.`
-          );
+          if (
+            latestStock <
+            requestedQuantity
+          ) {
+            inventoryProblems.push(
+              `"${latestProduct.name}": only ${latestStock} ${
+                latestStock === 1
+                  ? "item is"
+                  : "items are"
+              } available, but you requested ${requestedQuantity}.`
+            );
+          }
         }
-      });
-
-      // ==========================================
-      // STOP IF STOCK CHANGED
-      // ==========================================
+      );
 
       if (
-        inventoryProblems.length > 0
+        inventoryProblems.length >
+        0
       ) {
         await fetchInventory();
 
@@ -392,32 +577,26 @@ const Checkout = () => {
       // ==========================================
 
       const orderItems =
-        checkoutItems.map((item) => ({
-          productId: item._id,
-          name: item.name,
-          image: item.image,
-          price:
-            getProductPrice(item),
-          quantity: Number(
-            item.quantity
-          ),
-        }));
+        checkoutItems.map(
+          (item) => ({
+            productId: item._id,
+            name: item.name,
+            image: item.image,
+            price:
+              getProductPrice(item),
+            quantity: Number(
+              item.quantity
+            ),
+          })
+        );
 
       const frontendOrderId =
         generateOrderId();
 
       // ==========================================
-      // PREPARE ORDER DATA
+      // ORDER DATA
       // ==========================================
-      //
-      // IMPORTANT:
-      // We intentionally DO NOT send subtotal,
-      // delivery charge, total price, or currency
-      // as trusted values.
-      //
-      // The backend gets the latest settings and
-      // product prices directly from MongoDB.
-      //
+
       const orderData = {
         orderId:
           frontendOrderId,
@@ -452,6 +631,12 @@ const Checkout = () => {
 
         totalItems:
           checkoutTotalItems,
+
+        // Only send the coupon code.
+        // Backend calculates the actual discount.
+        couponCode:
+          appliedCoupon?.code ||
+          "",
       };
 
       // ==========================================
@@ -464,12 +649,9 @@ const Checkout = () => {
           orderData
         );
 
-      // ==========================================
-      // ORDER CREATED
-      // ==========================================
-
-      if (response.data.success) {
-        // Save the complete server-verified order.
+      if (
+        response.data.success
+      ) {
         sessionStorage.setItem(
           "lastOrder",
           JSON.stringify(
@@ -533,17 +715,16 @@ const Checkout = () => {
         {!inventoryLoading &&
           hasInventoryProblem && (
             <div className="mb-4 break-words rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700 dark:border-orange-900/50 dark:bg-orange-900/20 dark:text-orange-300">
-              Some products in your order do
-              not have enough stock. Please
-              review the items below before
-              placing your order.
+              Some products in your order do not have enough stock. Please review the items below before placing your order.
             </div>
           )}
 
         <div className="grid min-w-0 gap-5 lg:grid-cols-2 lg:gap-6">
           {/* Checkout Form */}
           <form
-            onSubmit={handleSubmit}
+            onSubmit={
+              handleSubmit
+            }
             className="min-w-0 rounded-xl bg-white p-4 shadow-md dark:bg-slate-800 sm:p-5"
           >
             <h2 className="mb-4 text-lg font-bold text-gray-900 dark:text-white sm:text-xl">
@@ -702,7 +883,8 @@ const Checkout = () => {
                 currencyLoading ||
                 inventoryLoading ||
                 hasInventoryProblem ||
-                checkoutItems.length === 0
+                checkoutItems.length ===
+                  0
               }
               className="mt-5 w-full rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
@@ -790,7 +972,9 @@ const Checkout = () => {
 
                   return (
                     <div
-                      key={item._id}
+                      key={
+                        item._id
+                      }
                       className={`min-w-0 rounded-lg border p-2.5 dark:border-slate-700 ${
                         inventoryProblem
                           ? "border-red-300 bg-red-50 dark:border-red-900/60 dark:bg-red-900/10"
@@ -800,8 +984,12 @@ const Checkout = () => {
                       <div className="flex min-w-0 items-center justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-2.5">
                           <img
-                            src={item.image}
-                            alt={item.name}
+                            src={
+                              item.image
+                            }
+                            alt={
+                              item.name
+                            }
                             className="h-12 w-12 shrink-0 rounded-lg border object-cover dark:border-slate-600"
                           />
 
@@ -859,6 +1047,93 @@ const Checkout = () => {
               )}
             </div>
 
+            {/* ==========================================
+                COUPON
+            ========================================== */}
+
+            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3.5 dark:border-slate-700 dark:bg-slate-900">
+              <div className="mb-2">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                  Coupon Code
+                </h3>
+
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  Enter a valid coupon to receive a discount.
+                </p>
+              </div>
+
+              <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
+                <input
+                  type="text"
+                  value={
+                    couponCode
+                  }
+                  onChange={(event) => {
+                    setCouponCode(
+                      event.target
+                        .value
+                    );
+
+                    setCouponError(
+                      ""
+                    );
+
+                    setCouponSuccess(
+                      ""
+                    );
+                  }}
+                  disabled={
+                    couponLoading ||
+                    !!appliedCoupon
+                  }
+                  placeholder="e.g. WELCOME10"
+                  className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm uppercase outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 disabled:cursor-not-allowed disabled:bg-gray-100 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:disabled:bg-slate-800"
+                />
+
+                {appliedCoupon ? (
+                  <button
+                    type="button"
+                    onClick={
+                      handleRemoveCoupon
+                    }
+                    className="rounded-lg border border-red-500 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-500 hover:text-white"
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={
+                      handleApplyCoupon
+                    }
+                    disabled={
+                      couponLoading ||
+                      !couponCode.trim()
+                    }
+                    className="rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {couponLoading
+                      ? "Checking..."
+                      : "Apply Coupon"}
+                  </button>
+                )}
+              </div>
+
+              {couponError && (
+                <p className="mt-2 break-words text-xs font-medium text-red-600 dark:text-red-400">
+                  {couponError}
+                </p>
+              )}
+
+              {couponSuccess &&
+                appliedCoupon && (
+                  <div className="mt-2 rounded-lg bg-green-100 px-3 py-2 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                    {couponSuccess}
+                  </div>
+                )}
+            </div>
+
+            {/* Totals */}
             <div className="mt-4 space-y-2 border-t pt-3 dark:border-slate-700">
               <div className="flex justify-between gap-4 text-sm text-gray-700 dark:text-gray-300">
                 <span>
@@ -874,7 +1149,7 @@ const Checkout = () => {
 
               <div className="flex justify-between gap-4 text-sm text-gray-700 dark:text-gray-300">
                 <span>
-                  Subtotal
+                  Product Subtotal
                 </span>
 
                 <span className="shrink-0">
@@ -883,6 +1158,21 @@ const Checkout = () => {
                   )}
                 </span>
               </div>
+
+              {appliedCoupon && (
+                <div className="flex justify-between gap-4 text-sm font-medium text-green-600 dark:text-green-400">
+                  <span>
+                    Coupon Discount
+                  </span>
+
+                  <span className="shrink-0">
+                    -
+                    {formatPrice(
+                      couponDiscount
+                    )}
+                  </span>
+                </div>
+              )}
 
               <div className="flex justify-between gap-4 text-sm text-gray-700 dark:text-gray-300">
                 <span>
@@ -900,7 +1190,7 @@ const Checkout = () => {
 
               <div className="mt-2 flex min-w-0 items-center justify-between gap-4 border-t pt-3 text-lg font-bold text-orange-600 dark:border-slate-700">
                 <span>
-                  Total Price
+                  Final Total
                 </span>
 
                 <span className="shrink-0">

@@ -1,128 +1,59 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import API from "../api/api";
 import api from "../api/axios";
+import { getImageUrl } from "../api/config";
 
 const Profile = () => {
-  const {
-    user,
-    setUser,
-  } = useAuth();
-
-  // =========================================================
-  // API / IMAGE URL HELPER
-  // =========================================================
-
-  const API_BASE_URL =
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:5050";
-
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) {
-      return "";
-    }
-
-    // External image URL
-    if (
-      imagePath.startsWith("http://") ||
-      imagePath.startsWith("https://") ||
-      imagePath.startsWith("data:")
-    ) {
-      return imagePath;
-    }
-
-    // Uploaded backend image
-    if (
-      imagePath.startsWith("/uploads/") ||
-      imagePath.startsWith("uploads/")
-    ) {
-      const cleanPath = imagePath.startsWith("/")
-        ? imagePath
-        : `/${imagePath}`;
-
-      return `${API_BASE_URL}${cleanPath}`;
-    }
-
-    return imagePath;
-  };
+  const { user, setUser } = useAuth();
 
   // =========================================================
   // EDIT MODE
   // =========================================================
 
-  const [editing, setEditing] =
-    useState(false);
+  const [editing, setEditing] = useState(false);
 
   // =========================================================
   // SAVING
   // =========================================================
 
-  const [saving, setSaving] =
-    useState(false);
+  const [saving, setSaving] = useState(false);
 
   // =========================================================
   // MESSAGES
   // =========================================================
 
-  const [error, setError] =
-    useState("");
-
-  const [success, setSuccess] =
-    useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   // =========================================================
   // ORDER HISTORY
   // =========================================================
 
-  const [orders, setOrders] =
-    useState([]);
-
-  const [
-    expandedOrderId,
-    setExpandedOrderId,
-  ] = useState(null);
-
-  const [
-    ordersLoading,
-    setOrdersLoading,
-  ] = useState(true);
-
-  const [
-    ordersError,
-    setOrdersError,
-  ] = useState("");
+  const [orders, setOrders] = useState([]);
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState("");
 
   // =========================================================
   // PROFILE PICTURE
   // =========================================================
 
-  const [
-    profilePictureFile,
-    setProfilePictureFile,
-  ] = useState(null);
+  const [profilePictureFile, setProfilePictureFile] = useState(null);
 
-  const [
-    profilePicturePreview,
-    setProfilePicturePreview,
-  ] = useState(
-    user?.profilePicture
-      ? getImageUrl(
-          user.profilePicture
-        )
-      : ""
+  const [profilePicturePreview, setProfilePicturePreview] = useState(
+    user?.profilePicture ? getImageUrl(user.profilePicture) : ""
   );
 
   // =========================================================
   // FORM DATA
   // =========================================================
 
-  const [formData, setFormData] =
-    useState({
-      name: user?.name || "",
-      email: user?.email || "",
-      password: "",
-    });
+  const [formData, setFormData] = useState({
+    name: user?.name || "",
+    email: user?.email || "",
+    password: "",
+  });
 
   // =========================================================
   // FETCH MY ORDERS
@@ -134,21 +65,13 @@ const Profile = () => {
         setOrdersLoading(true);
         setOrdersError("");
 
-        const response =
-          await api.get(
-            "/orders/my-orders"
-          );
+        const response = await api.get("/orders/my-orders");
 
         if (response.data.success) {
-          setOrders(
-            response.data.orders || []
-          );
+          setOrders(response.data.orders || []);
         }
       } catch (error) {
-        console.error(
-          "Fetch My Orders Error:",
-          error
-        );
+        console.error("Fetch My Orders Error:", error);
 
         setOrdersError(
           error.response?.data?.message ||
@@ -172,65 +95,42 @@ const Profile = () => {
   // =========================================================
 
   const handleChange = (event) => {
-    const {
-      name,
-      value,
-    } = event.target;
+    const { name, value } = event.target;
 
-    setFormData(
-      (previousData) => ({
-        ...previousData,
-        [name]: value,
-      })
-    );
+    setFormData((previousData) => ({
+      ...previousData,
+      [name]: value,
+    }));
   };
 
   // =========================================================
   // HANDLE PROFILE PICTURE
   // =========================================================
 
-  const handleProfilePictureChange =
-    (event) => {
-      const file =
-        event.target.files?.[0];
+  const handleProfilePictureChange = (event) => {
+    const file = event.target.files?.[0];
 
-      if (!file) {
-        return;
-      }
+    if (!file) {
+      return;
+    }
 
-      if (
-        !file.type.startsWith(
-          "image/"
-        )
-      ) {
-        setError(
-          "Please select a valid image file."
-        );
+    if (!file.type.startsWith("image/")) {
+      setError("Please select a valid image file.");
+      return;
+    }
 
-        return;
-      }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Profile picture must be smaller than 5MB.");
+      return;
+    }
 
-      if (
-        file.size >
-        5 * 1024 * 1024
-      ) {
-        setError(
-          "Profile picture must be smaller than 5MB."
-        );
+    setProfilePictureFile(file);
+    setError("");
 
-        return;
-      }
+    const previewUrl = URL.createObjectURL(file);
 
-      setProfilePictureFile(file);
-      setError("");
-
-      const previewUrl =
-        URL.createObjectURL(file);
-
-      setProfilePicturePreview(
-        previewUrl
-      );
-    };
+    setProfilePicturePreview(previewUrl);
+  };
 
   // =========================================================
   // START EDITING
@@ -246,11 +146,7 @@ const Profile = () => {
     setProfilePictureFile(null);
 
     setProfilePicturePreview(
-      user?.profilePicture
-        ? getImageUrl(
-            user.profilePicture
-          )
-        : ""
+      user?.profilePicture ? getImageUrl(user.profilePicture) : ""
     );
 
     setError("");
@@ -272,11 +168,7 @@ const Profile = () => {
     setProfilePictureFile(null);
 
     setProfilePicturePreview(
-      user?.profilePicture
-        ? getImageUrl(
-            user.profilePicture
-          )
-        : ""
+      user?.profilePicture ? getImageUrl(user.profilePicture) : ""
     );
 
     setError("");
@@ -296,23 +188,11 @@ const Profile = () => {
       setError("");
       setSuccess("");
 
-      const formDataToSend =
-        new FormData();
+      const formDataToSend = new FormData();
 
-      formDataToSend.append(
-        "name",
-        formData.name
-      );
-
-      formDataToSend.append(
-        "email",
-        formData.email
-      );
-
-      formDataToSend.append(
-        "password",
-        formData.password
-      );
+      formDataToSend.append("name", formData.name);
+      formDataToSend.append("email", formData.email);
+      formDataToSend.append("password", formData.password);
 
       if (profilePictureFile) {
         formDataToSend.append(
@@ -321,15 +201,10 @@ const Profile = () => {
         );
       }
 
-      const response =
-        await api.put(
-          "/profile",
-          formDataToSend
-        );
+      const response = await api.put("/profile", formDataToSend);
 
       if (response.data.success) {
-        const updatedUser =
-          response.data.user;
+        const updatedUser = response.data.user;
 
         // Update AuthContext
         setUser(updatedUser);
@@ -337,44 +212,31 @@ const Profile = () => {
         // Update localStorage
         localStorage.setItem(
           "user",
-          JSON.stringify(
-            updatedUser
-          )
+          JSON.stringify(updatedUser)
         );
 
         // Clear password
         setFormData({
-          name:
-            updatedUser.name || "",
-          email:
-            updatedUser.email || "",
+          name: updatedUser.name || "",
+          email: updatedUser.email || "",
           password: "",
         });
 
         // Reset profile picture
-        setProfilePictureFile(
-          null
-        );
+        setProfilePictureFile(null);
 
         setProfilePicturePreview(
           updatedUser.profilePicture
-            ? getImageUrl(
-                updatedUser.profilePicture
-              )
+            ? getImageUrl(updatedUser.profilePicture)
             : ""
         );
 
-        setSuccess(
-          "Profile updated successfully."
-        );
+        setSuccess("Profile updated successfully.");
 
         setEditing(false);
       }
     } catch (error) {
-      console.error(
-        "Profile Update Error:",
-        error
-      );
+      console.error("Profile Update Error:", error);
 
       setError(
         error.response?.data?.message ||
@@ -391,15 +253,15 @@ const Profile = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-100 dark:bg-slate-900 flex items-center justify-center">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
+      <div className="min-h-screen bg-gray-100 dark:bg-slate-900 flex items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-xl bg-white p-8 text-center shadow dark:bg-slate-800">
+          <h1 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
             You are not logged in.
           </h1>
 
           <Link
             to="/Login"
-            className="inline-block rounded-lg bg-orange-600 px-5 py-3 text-white hover:bg-orange-700"
+            className="inline-block rounded-lg bg-orange-600 px-5 py-3 text-white transition hover:bg-orange-700"
           >
             Login
           </Link>
@@ -409,14 +271,14 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-slate-900 py-12 px-4">
+    <div className="min-h-screen bg-gray-100 px-4 py-12 dark:bg-slate-900">
       <div className="mx-auto max-w-3xl">
 
         {/* =================================================
             PAGE HEADER
         ================================================== */}
 
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
               My Profile
@@ -430,7 +292,7 @@ const Profile = () => {
           {!editing && (
             <button
               onClick={handleEdit}
-              className="rounded-lg bg-blue-600 px-5 py-3 font-medium text-white hover:bg-blue-700"
+              className="w-full rounded-lg bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700 sm:w-auto"
             >
               ✏️ Edit Profile
             </button>
@@ -442,7 +304,7 @@ const Profile = () => {
         ================================================== */}
 
         {success && (
-          <div className="mb-6 rounded-lg border border-green-300 bg-green-100 p-4 text-green-700">
+          <div className="mb-6 rounded-lg border border-green-300 bg-green-100 p-4 text-green-700 dark:border-green-700 dark:bg-green-900/30 dark:text-green-300">
             {success}
           </div>
         )}
@@ -452,7 +314,7 @@ const Profile = () => {
         ================================================== */}
 
         {error && (
-          <div className="mb-6 rounded-lg border border-red-300 bg-red-100 p-4 text-red-700">
+          <div className="mb-6 rounded-lg border border-red-300 bg-red-100 p-4 text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-300">
             {error}
           </div>
         )}
@@ -466,35 +328,30 @@ const Profile = () => {
           {/* Profile Header */}
 
           <div className="bg-orange-600 px-6 py-8">
-            <div className="flex items-center gap-5">
+            <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
 
               {/* Profile Picture */}
 
               {user.profilePicture ? (
                 <img
-                  src={getImageUrl(
-                    user.profilePicture
-                  )}
+                  src={getImageUrl(user.profilePicture)}
                   alt={user.name}
-                  className="h-20 w-20 rounded-full object-cover border-4 border-white shadow"
+                  className="h-20 w-20 shrink-0 rounded-full border-4 border-white object-cover shadow"
                 />
               ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white text-4xl shadow">
-                  {user.name
-                    ?.charAt(0)
-                    ?.toUpperCase() ||
-                    "U"}
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-white text-4xl shadow">
+                  {user.name?.charAt(0)?.toUpperCase() || "U"}
                 </div>
               )}
 
               {/* User Name */}
 
-              <div>
-                <h2 className="text-2xl font-bold text-white">
+              <div className="min-w-0">
+                <h2 className="break-words text-2xl font-bold text-white">
                   {user.name}
                 </h2>
 
-                <p className="mt-1 text-orange-100">
+                <p className="mt-1 break-all text-orange-100">
                   {user.email}
                 </p>
               </div>
@@ -506,10 +363,7 @@ const Profile = () => {
           ================================================== */}
 
           {editing ? (
-            <form
-              onSubmit={handleSave}
-              className="p-6"
-            >
+            <form onSubmit={handleSave} className="p-6">
               <h2 className="mb-6 text-xl font-bold text-gray-800 dark:text-white">
                 Edit Profile
               </h2>
@@ -521,38 +375,30 @@ const Profile = () => {
                   Profile Picture
                 </label>
 
-                <div className="flex items-center gap-5">
+                <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
                   {profilePicturePreview ? (
                     <img
-                      src={
-                        profilePicturePreview
-                      }
+                      src={profilePicturePreview}
                       alt="Profile Preview"
-                      className="h-24 w-24 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600"
+                      className="h-24 w-24 shrink-0 rounded-full border-2 border-gray-300 object-cover dark:border-gray-600"
                     />
                   ) : (
-                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 text-2xl font-bold text-gray-600 dark:text-gray-300">
-                      {user.name
-                        ?.charAt(0)
-                        ?.toUpperCase() ||
-                        "U"}
+                    <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gray-200 text-2xl font-bold text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                      {user.name?.charAt(0)?.toUpperCase() || "U"}
                     </div>
                   )}
 
-                  <div>
+                  <div className="w-full">
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={
-                        handleProfilePictureChange
-                      }
-                      className="block w-full text-sm text-gray-700 dark:text-gray-300
+                      onChange={handleProfilePictureChange}
+                      className="block w-full cursor-pointer text-sm text-gray-700 dark:text-gray-300
                                  file:mr-4 file:rounded-lg file:border-0
                                  file:bg-blue-600 file:px-4 file:py-2
                                  file:text-sm file:font-semibold
                                  file:text-white
-                                 hover:file:bg-blue-700
-                                 cursor-pointer"
+                                 hover:file:bg-blue-700"
                     />
 
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -575,9 +421,7 @@ const Profile = () => {
                     type="text"
                     name="name"
                     value={formData.name}
-                    onChange={
-                      handleChange
-                    }
+                    onChange={handleChange}
                     required
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
                   />
@@ -594,9 +438,7 @@ const Profile = () => {
                     type="email"
                     name="email"
                     value={formData.email}
-                    onChange={
-                      handleChange
-                    }
+                    onChange={handleChange}
                     required
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
                   />
@@ -612,12 +454,8 @@ const Profile = () => {
                   <input
                     type="password"
                     name="password"
-                    value={
-                      formData.password
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    value={formData.password}
+                    onChange={handleChange}
                     placeholder="Leave blank to keep current password"
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
                   />
@@ -626,24 +464,20 @@ const Profile = () => {
 
               {/* BUTTONS */}
 
-              <div className="mt-8 flex gap-3">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-green-600 px-6 py-3 font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                  className="w-full rounded-lg bg-green-600 px-6 py-3 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
-                  {saving
-                    ? "Saving..."
-                    : "💾 Save Changes"}
+                  {saving ? "Saving..." : "💾 Save Changes"}
                 </button>
 
                 <button
                   type="button"
-                  onClick={
-                    handleCancel
-                  }
+                  onClick={handleCancel}
                   disabled={saving}
-                  className="rounded-lg bg-gray-600 px-6 py-3 font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+                  className="w-full rounded-lg bg-gray-600 px-6 py-3 font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
                   ❌ Cancel
                 </button>
@@ -669,7 +503,7 @@ const Profile = () => {
                     Full Name
                   </p>
 
-                  <p className="mt-1 font-medium text-gray-800 dark:text-white">
+                  <p className="mt-1 break-words font-medium text-gray-800 dark:text-white">
                     {user.name}
                   </p>
                 </div>
@@ -681,7 +515,7 @@ const Profile = () => {
                     Email Address
                   </p>
 
-                  <p className="mt-1 font-medium text-gray-800 dark:text-white">
+                  <p className="mt-1 break-all font-medium text-gray-800 dark:text-white">
                     {user.email}
                   </p>
                 </div>
@@ -695,14 +529,12 @@ const Profile = () => {
 
                   <span
                     className={`mt-1 inline-flex rounded-full px-3 py-1 text-sm font-medium ${
-                      user.role ===
-                      "admin"
+                      user.role === "admin"
                         ? "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"
                         : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200"
                     }`}
                   >
-                    {user.role ||
-                      "customer"}
+                    {user.role || "customer"}
                   </span>
                 </div>
 
@@ -752,12 +584,11 @@ const Profile = () => {
 
           {/* Error */}
 
-          {!ordersLoading &&
-            ordersError && (
-              <div className="rounded-xl border border-red-300 bg-red-100 p-4 text-center text-sm text-red-700">
-                {ordersError}
-              </div>
-            )}
+          {!ordersLoading && ordersError && (
+            <div className="rounded-xl border border-red-300 bg-red-100 p-4 text-center text-sm text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-300">
+              {ordersError}
+            </div>
+          )}
 
           {/* No Orders */}
 
@@ -795,8 +626,7 @@ const Profile = () => {
               <div className="space-y-3">
                 {orders.map((order) => {
                   const isExpanded =
-                    expandedOrderId ===
-                    order._id;
+                    expandedOrderId === order._id;
 
                   return (
                     <div
@@ -817,9 +647,7 @@ const Profile = () => {
                             </p>
 
                             <p className="mt-1 truncate font-mono text-sm font-bold text-orange-600">
-                              #
-                              {order.orderId ||
-                                "N/A"}
+                              #{order.orderId || "N/A"}
                             </p>
                           </div>
 
@@ -846,17 +674,13 @@ const Profile = () => {
 
                             <span
                               className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                order.status ===
-                                "Delivered"
+                                order.status === "Delivered"
                                   ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
-                                  : order.status ===
-                                    "Shipped"
+                                  : order.status === "Shipped"
                                   ? "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300"
-                                  : order.status ===
-                                    "Cancelled"
+                                  : order.status === "Cancelled"
                                   ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
-                                  : order.status ===
-                                    "Processing"
+                                  : order.status === "Processing"
                                   ? "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200"
                                   : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300"
                               }`}
@@ -872,9 +696,7 @@ const Profile = () => {
                               type="button"
                               onClick={() =>
                                 setExpandedOrderId(
-                                  isExpanded
-                                    ? null
-                                    : order._id
+                                  isExpanded ? null : order._id
                                 )
                               }
                               className="w-full rounded-lg border border-orange-500 px-3 py-2 text-sm font-medium text-orange-600 transition hover:bg-orange-500 hover:text-white sm:w-auto"
@@ -904,8 +726,7 @@ const Profile = () => {
                               </p>
 
                               <p className="mt-1 text-sm font-medium text-gray-800 dark:text-white">
-                                {order.paymentMethod ||
-                                  "N/A"}
+                                {order.paymentMethod || "N/A"}
                               </p>
                             </div>
 
@@ -918,8 +739,7 @@ const Profile = () => {
 
                               <p className="mt-1 text-sm font-medium text-gray-800 dark:text-white">
                                 {order.totalItems}{" "}
-                                {order.totalItems ===
-                                1
+                                {order.totalItems === 1
                                   ? "product"
                                   : "products"}
                               </p>
@@ -933,17 +753,13 @@ const Profile = () => {
                               </p>
 
                               <p className="mt-1 text-sm text-gray-800 dark:text-white">
-                                {order.customer
-                                  ?.address ||
-                                  "N/A"}
+                                {order.customer?.address || "N/A"}
 
-                                {order.customer
-                                  ?.city
+                                {order.customer?.city
                                   ? `, ${order.customer.city}`
                                   : ""}
 
-                                {order.customer
-                                  ?.zipCode
+                                {order.customer?.zipCode
                                   ? ` - ${order.customer.zipCode}`
                                   : ""}
                               </p>
@@ -958,73 +774,53 @@ const Profile = () => {
                             </p>
 
                             <div className="space-y-2">
-                              {order.items.map(
-                                (
-                                  item,
-                                  index
-                                ) => (
-                                  <div
-                                    key={`${order._id}-${index}`}
-                                    className="flex items-center gap-3 rounded-lg bg-gray-50 p-2.5 dark:bg-slate-700"
-                                  >
+                              {order.items.map((item, index) => (
+                                <div
+                                  key={`${order._id}-${index}`}
+                                  className="flex items-center gap-3 rounded-lg bg-gray-50 p-2.5 dark:bg-slate-700"
+                                >
 
-                                    {/* Product Image */}
+                                  {/* Product Image */}
 
-                                    {item.image ? (
-                                      <img
-                                        src={getImageUrl(
-                                          item.image
-                                        )}
-                                        alt={
-                                          item.name
-                                        }
-                                        className="h-12 w-12 shrink-0 rounded-lg border object-cover"
-                                        onError={(
-                                          event
-                                        ) => {
-                                          event.currentTarget.style.display =
-                                            "none";
-                                        }}
-                                      />
-                                    ) : (
-                                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gray-200 text-sm dark:bg-gray-600">
-                                        📦
-                                      </div>
-                                    )}
-
-                                    {/* Product Information */}
-
-                                    <div className="min-w-0 flex-1">
-                                      <p className="truncate text-sm font-medium text-gray-800 dark:text-white">
-                                        {
-                                          item.name
-                                        }
-                                      </p>
-
-                                      <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                                        Quantity:{" "}
-                                        {
-                                          item.quantity
-                                        }
-                                      </p>
+                                  {item.image ? (
+                                    <img
+                                      src={getImageUrl(item.image)}
+                                      alt={item.name}
+                                      className="h-12 w-12 shrink-0 rounded-lg border object-cover"
+                                      onError={(event) => {
+                                        event.currentTarget.style.display =
+                                          "none";
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gray-200 text-sm dark:bg-gray-600">
+                                      📦
                                     </div>
+                                  )}
 
-                                    {/* Product Price */}
+                                  {/* Product Information */}
 
-                                    <p className="shrink-0 text-sm font-semibold text-orange-600">
-                                      $
-                                      {(
-                                        Number(
-                                          item.price
-                                        ) *
-                                        item.quantity
-                                      ).toFixed(
-                                        2
-                                      )}
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-medium text-gray-800 dark:text-white">
+                                      {item.name}
+                                    </p>
+
+                                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                                      Quantity: {item.quantity}
                                     </p>
                                   </div>
-                                )
-                              )}
+
+                                  {/* Product Price */}
+
+                                  <p className="shrink-0 text-sm font-semibold text-orange-600">
+                                    $
+                                    {(
+                                      Number(item.price) *
+                                      item.quantity
+                                    ).toFixed(2)}
+                                  </p>
+                                </div>
+                              ))}
                             </div>
                           </div>
 
@@ -1034,10 +830,8 @@ const Profile = () => {
 
                             {/* Cancel Button */}
 
-                            {(order.status ===
-                              "Pending" ||
-                              order.status ===
-                                "Processing") && (
+                            {(order.status === "Pending" ||
+                              order.status === "Processing") && (
                               <button
                                 type="button"
                                 onClick={async () => {
@@ -1046,9 +840,7 @@ const Profile = () => {
                                       "Are you sure you want to cancel this order?"
                                     );
 
-                                  if (
-                                    !confirmCancel
-                                  ) {
+                                  if (!confirmCancel) {
                                     return;
                                   }
 
@@ -1059,23 +851,15 @@ const Profile = () => {
                                       );
 
                                     if (
-                                      response
-                                        .data
-                                        .success
+                                      response.data.success
                                     ) {
                                       setOrders(
-                                        (
-                                          previousOrders
-                                        ) =>
+                                        (previousOrders) =>
                                           previousOrders.map(
-                                            (
-                                              previousOrder
-                                            ) =>
+                                            (previousOrder) =>
                                               previousOrder._id ===
                                               order._id
-                                                ? response
-                                                    .data
-                                                    .order
+                                                ? response.data.order
                                                 : previousOrder
                                           )
                                       );
@@ -1084,39 +868,24 @@ const Profile = () => {
                                         "Order cancelled successfully."
                                       );
 
-                                      setTimeout(
-                                        () => {
-                                          setSuccess(
-                                            ""
-                                          );
-                                        },
-                                        3000
-                                      );
+                                      setTimeout(() => {
+                                        setSuccess("");
+                                      }, 3000);
                                     }
-                                  } catch (
-                                    error
-                                  ) {
+                                  } catch (error) {
                                     console.error(
                                       "Cancel Order Error:",
                                       error
                                     );
 
                                     setError(
-                                      error
-                                        .response
-                                        ?.data
-                                        ?.message ||
+                                      error.response?.data?.message ||
                                         "Failed to cancel order."
                                     );
 
-                                    setTimeout(
-                                      () => {
-                                        setError(
-                                          ""
-                                        );
-                                      },
-                                      3000
-                                    );
+                                    setTimeout(() => {
+                                      setError("");
+                                    }, 3000);
                                   }
                                 }}
                                 className="w-full rounded-lg border border-red-500 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-500 hover:text-white sm:w-auto"
@@ -1131,9 +900,7 @@ const Profile = () => {
                               Total: $
                               {Number(
                                 order.totalPrice
-                              ).toFixed(
-                                2
-                              )}
+                              ).toFixed(2)}
                             </p>
                           </div>
                         </div>
@@ -1157,7 +924,6 @@ const Profile = () => {
             ← Back to Home
           </Link>
         </div>
-
       </div>
     </div>
   );

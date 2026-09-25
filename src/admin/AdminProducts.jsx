@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../api/axios";
+import { getImageUrl } from "../api/config";
 import { useCart } from "../context/CartContext";
 
 const AdminProducts = () => {
@@ -97,26 +98,6 @@ const AdminProducts = () => {
   useEffect(() => {
     fetchProducts();
   }, []);
-
-  // Convert an image path into a browser-ready URL.
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) {
-      return "";
-    }
-
-    if (
-      imagePath.startsWith("http://") ||
-      imagePath.startsWith("https://")
-    ) {
-      return imagePath;
-    }
-
-    if (imagePath.startsWith("/uploads/")) {
-      return `http://localhost:5050${imagePath}`;
-    }
-
-    return imagePath;
-  };
 
   // Handle normal form input changes.
   const handleChange = (event) => {
@@ -331,14 +312,17 @@ const AdminProducts = () => {
         "freeShipping",
         String(Boolean(formData.freeShipping))
       );
+
       data.append(
         "returns30Days",
         String(Boolean(formData.returns30Days))
       );
+
       data.append(
         "secureCheckout",
         String(Boolean(formData.secureCheckout))
       );
+
       data.append(
         "warranty1Year",
         String(Boolean(formData.warranty1Year))
@@ -541,6 +525,7 @@ const AdminProducts = () => {
             : Boolean(product.freeShipping)
         )
       );
+
       data.append(
         "returns30Days",
         String(
@@ -549,6 +534,7 @@ const AdminProducts = () => {
             : Boolean(product.returns30Days)
         )
       );
+
       data.append(
         "secureCheckout",
         String(
@@ -557,6 +543,7 @@ const AdminProducts = () => {
             : Boolean(product.secureCheckout)
         )
       );
+
       data.append(
         "warranty1Year",
         String(
@@ -1295,6 +1282,7 @@ const AdminProducts = () => {
                     onChange={handleChange}
                     className="h-4 w-4 accent-orange-600"
                   />
+
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                     Free Shipping
                   </span>
@@ -1308,6 +1296,7 @@ const AdminProducts = () => {
                     onChange={handleChange}
                     className="h-4 w-4 accent-orange-600"
                   />
+
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                     30-Day Returns
                   </span>
@@ -1321,6 +1310,7 @@ const AdminProducts = () => {
                     onChange={handleChange}
                     className="h-4 w-4 accent-orange-600"
                   />
+
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                     Secure Checkout
                   </span>
@@ -1334,6 +1324,7 @@ const AdminProducts = () => {
                     onChange={handleChange}
                     className="h-4 w-4 accent-orange-600"
                   />
+
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                     1-Year Warranty
                   </span>
@@ -1906,6 +1897,7 @@ const AdminProducts = () => {
                   className="flex min-w-0 items-center justify-center gap-1 rounded-lg bg-blue-50 px-2 py-2.5 text-sm font-medium text-blue-600 transition hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40"
                 >
                   ✏️
+
                   <span className="truncate">
                     Edit
                   </span>
@@ -1921,6 +1913,7 @@ const AdminProducts = () => {
                   className="flex min-w-0 items-center justify-center gap-1 rounded-lg bg-red-50 px-2 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
                 >
                   🗑️
+
                   <span className="truncate">
                     Delete
                   </span>
@@ -1935,3 +1928,4 @@ const AdminProducts = () => {
 };
 
 export default AdminProducts;
+

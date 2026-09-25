@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 
@@ -6,6 +5,7 @@ const User = require("../models/User");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
 const Settings = require("../models/Settings");
+const Coupon = require("../models/Coupon");
 
 const bcrypt = require("bcrypt");
 
@@ -22,7 +22,6 @@ const profileUpload = require("../middleware/profileUpload");
 
 router.use(authenticateUser);
 router.use(requireAdmin);
-
 
 // ==========================================
 // ADMIN GLOBAL SEARCH
@@ -42,17 +41,13 @@ router.get("/search", async (req, res) => {
       });
     }
 
-    // Escape regex special characters so the search
-    // term cannot create an invalid regular expression.
+    // Escape regex special characters.
     const escapedSearchTerm = searchTerm.replace(
       /[.*+?^${}()|[\]\\]/g,
       "\\$&"
     );
 
-    const regex = new RegExp(
-      escapedSearchTerm,
-      "i"
-    );
+    const regex = new RegExp(escapedSearchTerm, "i");
 
     // ==========================================
     // SEARCH PRODUCTS
@@ -64,9 +59,7 @@ router.get("/search", async (req, res) => {
         { category: regex },
       ],
     })
-      .select(
-        "_id name price category image createdAt"
-      )
+      .select("_id name price category image createdAt")
       .sort({ createdAt: -1 })
       .limit(10);
 
@@ -80,9 +73,7 @@ router.get("/search", async (req, res) => {
         { email: regex },
       ],
     })
-      .select(
-        "_id name email role profilePicture createdAt"
-      )
+      .select("_id name email role profilePicture createdAt")
       .sort({ createdAt: -1 })
       .limit(10);
 
@@ -105,30 +96,21 @@ router.get("/search", async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(10);
 
-    // ==========================================
-    // RESPONSE
-    // ==========================================
-
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       products,
       users,
       orders,
     });
   } catch (error) {
-    console.error(
-      "Admin Search Error:",
-      error
-    );
+    console.error("Admin Search Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 });
-
-
 
 // ==========================================
 // ADMIN DASHBOARD STATISTICS
@@ -137,35 +119,28 @@ router.get("/search", async (req, res) => {
 
 router.get("/stats", async (req, res) => {
   try {
-    // Count products.
     const totalProducts =
       await Product.countDocuments();
 
-    // Count users.
     const totalUsers =
       await User.countDocuments();
 
-    // Get all orders.
     const orders = await Order.find();
 
-    // Count orders.
     const totalOrders = orders.length;
 
-    // Calculate total revenue.
     const totalRevenue = orders.reduce(
       (total, order) =>
         total + Number(order.totalPrice || 0),
       0
     );
 
-    // Get latest five orders.
     const recentOrders = await Order.find()
       .sort({ createdAt: -1 })
       .limit(5);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-
       stats: {
         totalProducts,
         totalUsers,
@@ -177,7 +152,7 @@ router.get("/stats", async (req, res) => {
   } catch (error) {
     console.error("Admin Stats Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
@@ -195,17 +170,14 @@ router.get("/users", async (req, res) => {
       .select("-password")
       .sort({ createdAt: -1 });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       users,
     });
   } catch (error) {
-    console.error(
-      "Get Admin Users Error:",
-      error
-    );
+    console.error("Get Admin Users Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
@@ -228,10 +200,6 @@ router.post(
         password,
         role,
       } = req.body;
-
-      // ==========================================
-      // VALIDATION
-      // ==========================================
 
       if (
         !name ||
@@ -256,10 +224,12 @@ router.post(
         });
       }
 
-      // Check duplicate email.
+      const normalizedEmail =
+        email.toLowerCase().trim();
+
       const existingUser =
         await User.findOne({
-          email: email.toLowerCase(),
+          email: normalizedEmail,
         });
 
       if (existingUser) {
@@ -270,16 +240,8 @@ router.post(
         });
       }
 
-      // ==========================================
-      // HASH PASSWORD
-      // ==========================================
-
       const hashedPassword =
         await bcrypt.hash(password, 10);
-
-      // ==========================================
-      // PROFILE PICTURE
-      // ==========================================
 
       let profilePicture = "";
 
@@ -288,13 +250,9 @@ router.post(
           `/uploads/profilePictures/${req.file.filename}`;
       }
 
-      // ==========================================
-      // CREATE USER
-      // ==========================================
-
       const newUser = new User({
         name,
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         password: hashedPassword,
         role,
         profilePicture,
@@ -303,13 +261,12 @@ router.post(
       const savedUser =
         await newUser.save();
 
-      // Remove password before sending response.
       const userResponse =
         savedUser.toObject();
 
       delete userResponse.password;
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         message:
           "User created successfully.",
@@ -321,7 +278,7 @@ router.post(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: error.message,
       });
@@ -350,8 +307,6 @@ router.delete(
         });
       }
 
-      // Prevent admin from deleting
-      // their own account.
       if (
         String(user._id) ===
         String(req.user.id)
@@ -365,7 +320,7 @@ router.delete(
 
       await User.findByIdAndDelete(userId);
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message:
           "User deleted successfully.",
@@ -376,7 +331,7 @@ router.delete(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: error.message,
       });
@@ -407,7 +362,7 @@ router.get(
         });
       }
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         user,
       });
@@ -417,7 +372,7 @@ router.get(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: error.message,
       });
@@ -453,21 +408,13 @@ router.put(
         });
       }
 
-      // ==========================================
-      // UPDATE NAME
-      // ==========================================
-
       if (name !== undefined) {
         user.name = name;
       }
 
-      // ==========================================
-      // UPDATE EMAIL
-      // ==========================================
-
       if (email !== undefined) {
         const normalizedEmail =
-          email.toLowerCase();
+          email.toLowerCase().trim();
 
         const existingUser =
           await User.findOne({
@@ -486,10 +433,6 @@ router.put(
         user.email = normalizedEmail;
       }
 
-      // ==========================================
-      // UPDATE PASSWORD
-      // ==========================================
-
       if (
         password !== undefined &&
         password.trim() !== ""
@@ -500,10 +443,6 @@ router.put(
             10
           );
       }
-
-      // ==========================================
-      // UPDATE ROLE
-      // ==========================================
 
       if (role !== undefined) {
         if (
@@ -529,7 +468,7 @@ router.put(
 
       delete userResponse.password;
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message:
           "User updated successfully.",
@@ -541,7 +480,7 @@ router.put(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: error.message,
       });
@@ -551,9 +490,6 @@ router.put(
 
 // ==========================================
 // ADMIN SETTINGS
-// ==========================================
-
-// ==========================================
 // GET /admin/settings
 // ==========================================
 
@@ -561,11 +497,9 @@ router.get(
   "/settings",
   async (req, res) => {
     try {
-      // Find existing settings.
       let settings =
         await Settings.findOne();
 
-      // Create default settings if none exist.
       if (!settings) {
         settings =
           await Settings.create({
@@ -578,7 +512,6 @@ router.get(
           });
       }
 
-      // Safely read the saved announcement speed.
       const savedAnnouncementSpeed =
         Number(
           settings.announcementSpeed
@@ -593,15 +526,13 @@ router.get(
           ? savedAnnouncementSpeed
           : 20;
 
-      // Prevent stale settings from being returned after refresh.
       res.set(
         "Cache-Control",
         "no-store"
       );
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
-
         settings: {
           productCardsPerRow:
             settings.productCardsPerRow,
@@ -610,19 +541,15 @@ router.get(
             settings.deliveryCharge,
 
           announcementText:
-            settings.announcementText ||
-            "",
+            settings.announcementText || "",
 
-          // Return the actual saved ticker speed.
           announcementSpeed,
 
           currencyCode:
-            settings.currencyCode ||
-            "USD",
+            settings.currencyCode || "USD",
 
           currencySymbol:
-            settings.currencySymbol ||
-            "$",
+            settings.currencySymbol || "$",
         },
       });
     } catch (error) {
@@ -631,7 +558,7 @@ router.get(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: error.message,
       });
@@ -657,14 +584,9 @@ router.put(
         currencySymbol,
       } = req.body;
 
-      // ==========================================
-      // FIND EXISTING SETTINGS
-      // ==========================================
-
       let settings =
         await Settings.findOne();
 
-      // Create settings if they don't exist.
       if (!settings) {
         settings =
           new Settings({
@@ -686,9 +608,7 @@ router.put(
         undefined
       ) {
         const cardsPerRow =
-          Number(
-            productCardsPerRow
-          );
+          Number(productCardsPerRow);
 
         if (
           ![3, 4, 5, 6].includes(
@@ -715,9 +635,7 @@ router.put(
         undefined
       ) {
         const charge =
-          Number(
-            deliveryCharge
-          );
+          Number(deliveryCharge);
 
         if (
           !Number.isFinite(charge) ||
@@ -730,11 +648,8 @@ router.put(
           });
         }
 
-        // Keep delivery charge to two decimal places.
         settings.deliveryCharge =
-          Math.round(
-            charge * 100
-          ) / 100;
+          Math.round(charge * 100) / 100;
       }
 
       // ==========================================
@@ -764,7 +679,6 @@ router.put(
             announcementSpeed
           );
 
-        // 0 is intentionally valid because it means still.
         if (
           !Number.isFinite(speed) ||
           speed < 0 ||
@@ -777,7 +691,6 @@ router.put(
           });
         }
 
-        // Save the exact speed selected by the admin.
         settings.announcementSpeed =
           speed;
       }
@@ -838,8 +751,6 @@ router.put(
         },
       };
 
-      // Only update currency when the frontend
-      // actually sends a currency code.
       if (
         currencyCode !==
         undefined
@@ -864,11 +775,9 @@ router.put(
           });
         }
 
-        // Save currency code.
         settings.currencyCode =
           normalizedCurrencyCode;
 
-        // Get the official symbol from the backend list.
         settings.currencySymbol =
           selectedCurrency.symbol;
       } else if (
@@ -882,15 +791,11 @@ router.put(
       }
 
       // ==========================================
-      // SAVE TO MONGODB
+      // SAVE
       // ==========================================
 
       const savedSettings =
         await settings.save();
-
-      // ==========================================
-      // READ SAVED ANNOUNCEMENT SPEED
-      // ==========================================
 
       const savedAnnouncementSpeed =
         Number(
@@ -906,21 +811,15 @@ router.put(
           ? savedAnnouncementSpeed
           : 20;
 
-      // ==========================================
-      // RETURN SAVED SETTINGS
-      // ==========================================
-
       res.set(
         "Cache-Control",
         "no-store"
       );
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
-
         message:
           "Settings saved successfully.",
-
         settings: {
           productCardsPerRow:
             savedSettings.productCardsPerRow,
@@ -932,7 +831,6 @@ router.put(
             savedSettings.announcementText ||
             "",
 
-          // Return the exact value that MongoDB saved.
           announcementSpeed:
             finalAnnouncementSpeed,
 
@@ -951,7 +849,7 @@ router.put(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: error.message,
       });
@@ -1002,9 +900,8 @@ router.get(
         "no-store"
       );
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
-
         settings: {
           productCardsPerRow:
             settings.productCardsPerRow,
@@ -1033,7 +930,7 @@ router.get(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: error.message,
       });
@@ -1041,331 +938,775 @@ router.get(
   }
 );
 
+// ======================================================
+// COUPON MANAGEMENT
+// ======================================================
+
 // ==========================================
-// UPDATE ADMIN SETTINGS
-// PUT /admin/settings
+// GET ALL COUPONS
+// GET /admin/coupons
 // ==========================================
 
-router.put("/settings", async (req, res) => {
-  try {
-    const {
-      productCardsPerRow,
-      deliveryCharge,
-      announcementText,
+router.get(
+  "/coupons",
+  async (req, res) => {
+    try {
+      const coupons =
+        await Coupon.find()
+          .sort({
+            createdAt: -1,
+          })
+          .lean();
 
-      // IMPORTANT:
-      // Receive currency from AdminSettings.jsx.
-      currencyCode,
-      currencySymbol,
-    } = req.body;
+      return res.status(200).json({
+        success: true,
+        coupons,
+      });
+    } catch (error) {
+      console.error(
+        "Get coupons error:",
+        error
+      );
 
-    // ==========================================
-    // FIND EXISTING SETTINGS
-    // ==========================================
-
-    let settings =
-      await Settings.findOne();
-
-    // Create settings if they don't exist.
-    if (!settings) {
-      settings = new Settings({
-        productCardsPerRow: 4,
-        deliveryCharge: 0,
-        announcementText: "",
-        currencyCode: "USD",
-        currencySymbol: "$",
+      return res.status(500).json({
+        success: false,
+        message:
+          error.message ||
+          "Failed to load coupons.",
       });
     }
+  }
+);
 
-    // ==========================================
-    // PRODUCT CARDS PER ROW
-    // ==========================================
+// ==========================================
+// CREATE COUPON
+// POST /admin/coupons
+// ==========================================
 
-    if (
-      productCardsPerRow !== undefined
-    ) {
-      const cardsPerRow =
-        Number(productCardsPerRow);
+router.post(
+  "/coupons",
+  async (req, res) => {
+    try {
+      const {
+        code,
+        discountType,
+        discountValue,
+        minimumOrderAmount,
+        maximumDiscount,
+        expiryDate,
+        isActive,
+        usageLimit,
+      } = req.body;
+
+      // ==========================================
+      // COUPON CODE
+      // ==========================================
+
+      const normalizedCode =
+        typeof code === "string"
+          ? code.trim().toUpperCase()
+          : "";
+
+      if (!normalizedCode) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Coupon code is required.",
+        });
+      }
 
       if (
-        ![3, 4, 5, 6].includes(
-          cardsPerRow
+        !/^[A-Z0-9_-]+$/.test(
+          normalizedCode
         )
       ) {
         return res.status(400).json({
           success: false,
           message:
-            "Product cards per row must be 3, 4, 5, or 6.",
+            "Coupon code can contain only letters, numbers, hyphens, and underscores.",
         });
       }
 
-      settings.productCardsPerRow =
-        cardsPerRow;
-    }
-
-    // ==========================================
-    // DELIVERY CHARGE
-    // ==========================================
-
-    if (
-      deliveryCharge !== undefined
-    ) {
-      const charge =
-        Number(deliveryCharge);
+      // ==========================================
+      // DISCOUNT TYPE
+      // ==========================================
 
       if (
-        !Number.isFinite(charge) ||
-        charge < 0
+        !["fixed", "percentage"].includes(
+          discountType
+        )
       ) {
         return res.status(400).json({
           success: false,
           message:
-            "Delivery charge must be a valid number greater than or equal to 0.",
+            "Invalid discount type.",
         });
       }
 
-      // Keep delivery charge to
-      // two decimal places.
-      settings.deliveryCharge =
-        Math.round(charge * 100) / 100;
-    }
+      // ==========================================
+      // DISCOUNT VALUE
+      // ==========================================
 
-    // ==========================================
-    // ANNOUNCEMENT TEXT
-    // ==========================================
+      const numericDiscountValue =
+        Number(discountValue);
 
-    if (
-      announcementText !== undefined
-    ) {
-      settings.announcementText =
-        String(
-          announcementText
-        ).trim();
-    }
-
-    // ==========================================
-    // CURRENCY
-    // ==========================================
-
-    /*
-     * IMPORTANT:
-     *
-     * This was the missing part.
-     *
-     * AdminSettings.jsx sends:
-     *
-     * currencyCode
-     * currencySymbol
-     *
-     * but the previous backend code did not
-     * receive or save them.
-     */
-
-    const SUPPORTED_CURRENCIES = {
-      PKR: {
-        name: "Pakistani Rupee",
-        symbol: "₨",
-      },
-
-      USD: {
-        name: "US Dollar",
-        symbol: "$",
-      },
-
-      EUR: {
-        name: "Euro",
-        symbol: "€",
-      },
-
-      GBP: {
-        name: "British Pound",
-        symbol: "£",
-      },
-
-      AED: {
-        name: "UAE Dirham",
-        symbol: "د.إ",
-      },
-
-      SAR: {
-        name: "Saudi Riyal",
-        symbol: "﷼",
-      },
-
-      INR: {
-        name: "Indian Rupee",
-        symbol: "₹",
-      },
-
-      CAD: {
-        name: "Canadian Dollar",
-        symbol: "C$",
-      },
-
-      AUD: {
-        name: "Australian Dollar",
-        symbol: "A$",
-      },
-
-      JPY: {
-        name: "Japanese Yen",
-        symbol: "¥",
-      },
-    };
-
-    // Only update currency when the frontend
-    // actually sends a currency code.
-    if (
-      currencyCode !== undefined
-    ) {
-      const normalizedCurrencyCode =
-        String(currencyCode)
-          .trim()
-          .toUpperCase();
-
-      // Check whether the currency is supported.
-      const selectedCurrency =
-        SUPPORTED_CURRENCIES[
-          normalizedCurrencyCode
-        ];
-
-      if (!selectedCurrency) {
+      if (
+        !Number.isFinite(
+          numericDiscountValue
+        ) ||
+        numericDiscountValue <= 0
+      ) {
         return res.status(400).json({
           success: false,
           message:
-            "Unsupported currency selected.",
+            "Discount value must be greater than 0.",
         });
       }
 
-      // Save currency code.
-      settings.currencyCode =
-        normalizedCurrencyCode;
-
-      /*
-       * IMPORTANT:
-       *
-       * Do NOT blindly trust the symbol
-       * sent by the browser.
-       *
-       * Get the official symbol from the
-       * backend currency list.
-       */
-      settings.currencySymbol =
-        selectedCurrency.symbol;
-    } else if (
-      currencySymbol !== undefined
-    ) {
-      /*
-       * This allows the symbol to be updated
-       * only if currencyCode was not supplied.
-       *
-       * Normally AdminSettings.jsx sends
-       * both values, so this branch will not
-       * normally be used.
-       */
-      settings.currencySymbol =
-        String(currencySymbol).trim();
-    }
-
-    // ==========================================
-    // SAVE TO MONGODB
-    // ==========================================
-
-    const savedSettings =
-      await settings.save();
-
-    // ==========================================
-    // RETURN SAVED SETTINGS
-    // ==========================================
-
-    res.status(200).json({
-      success: true,
-
-      message:
-        "Settings saved successfully.",
-
-      settings: {
-        productCardsPerRow:
-          savedSettings.productCardsPerRow,
-
-        deliveryCharge:
-          savedSettings.deliveryCharge,
-
-        announcementText:
-          savedSettings.announcementText || "",
-
-        currencyCode:
-          savedSettings.currencyCode || "USD",
-
-        currencySymbol:
-          savedSettings.currencySymbol || "$",
-      },
-    });
-  } catch (error) {
-    console.error(
-      "Admin Settings PUT Error:",
-      error
-    );
-
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-});
-
-// ==========================================
-// GET PUBLIC WEBSITE SETTINGS
-// GET /admin/public-settings
-// ==========================================
-
-router.get(
-  "/public-settings",
-  async (req, res) => {
-    try {
-      let settings =
-        await Settings.findOne();
-
-      if (!settings) {
-        settings =
-          await Settings.create({
-            productCardsPerRow: 4,
-            deliveryCharge: 0,
-            announcementText: "",
-            currencyCode: "USD",
-            currencySymbol: "$",
-          });
+      if (
+        discountType === "percentage" &&
+        numericDiscountValue > 100
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Percentage discount cannot exceed 100%.",
+        });
       }
 
-      res.status(200).json({
+      // ==========================================
+      // MINIMUM ORDER AMOUNT
+      // ==========================================
+
+      const numericMinimum =
+        Number(
+          minimumOrderAmount ?? 0
+        );
+
+      if (
+        !Number.isFinite(
+          numericMinimum
+        ) ||
+        numericMinimum < 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Minimum order amount must be 0 or greater.",
+        });
+      }
+
+      // ==========================================
+      // MAXIMUM DISCOUNT
+      // ==========================================
+
+      let numericMaximum = null;
+
+      if (
+        maximumDiscount !== null &&
+        maximumDiscount !== undefined &&
+        String(
+          maximumDiscount
+        ).trim() !== ""
+      ) {
+        numericMaximum =
+          Number(maximumDiscount);
+
+        if (
+          !Number.isFinite(
+            numericMaximum
+          ) ||
+          numericMaximum <= 0
+        ) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Maximum discount must be greater than 0.",
+          });
+        }
+      }
+
+      // Maximum discount is only relevant
+      // for percentage coupons.
+      if (
+        discountType === "fixed"
+      ) {
+        numericMaximum = null;
+      }
+
+      // ==========================================
+      // EXPIRY DATE
+      // ==========================================
+
+      let parsedExpiry = null;
+
+      if (
+        expiryDate &&
+        String(expiryDate).trim()
+      ) {
+        const expiryString =
+          String(expiryDate).trim();
+
+        // Date-only values are treated as
+        // expiring at the end of that day.
+        if (
+          /^\d{4}-\d{2}-\d{2}$/.test(
+            expiryString
+          )
+        ) {
+          parsedExpiry = new Date(
+            `${expiryString}T23:59:59.999`
+          );
+        } else {
+          parsedExpiry =
+            new Date(expiryString);
+        }
+
+        if (
+          Number.isNaN(
+            parsedExpiry.getTime()
+          )
+        ) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Invalid expiry date.",
+          });
+        }
+
+        if (
+          parsedExpiry <= new Date()
+        ) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Expiry date must be in the future.",
+          });
+        }
+      }
+
+      // ==========================================
+      // USAGE LIMIT
+      // ==========================================
+
+      let numericUsageLimit = null;
+
+      if (
+        usageLimit !== null &&
+        usageLimit !== undefined &&
+        String(
+          usageLimit
+        ).trim() !== ""
+      ) {
+        numericUsageLimit =
+          Number(usageLimit);
+
+        if (
+          !Number.isInteger(
+            numericUsageLimit
+          ) ||
+          numericUsageLimit <= 0
+        ) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Usage limit must be a whole number greater than 0.",
+          });
+        }
+      }
+
+      // ==========================================
+      // CHECK DUPLICATE CODE
+      // ==========================================
+
+      const existingCoupon =
+        await Coupon.findOne({
+          code: normalizedCode,
+        });
+
+      if (existingCoupon) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "A coupon with this code already exists.",
+        });
+      }
+
+      // ==========================================
+      // CREATE COUPON
+      // ==========================================
+
+      const coupon =
+        await Coupon.create({
+          code: normalizedCode,
+
+          discountType,
+
+          discountValue:
+            Math.round(
+              numericDiscountValue * 100
+            ) / 100,
+
+          minimumOrderAmount:
+            Math.round(
+              numericMinimum * 100
+            ) / 100,
+
+          maximumDiscount:
+            numericMaximum === null
+              ? null
+              : Math.round(
+                  numericMaximum * 100
+                ) / 100,
+
+          expiryDate:
+            parsedExpiry,
+
+          isActive:
+            isActive !== false,
+
+          usageLimit:
+            numericUsageLimit,
+
+          usedCount: 0,
+        });
+
+      return res.status(201).json({
         success: true,
-
-        settings: {
-          productCardsPerRow:
-            settings.productCardsPerRow,
-
-          deliveryCharge:
-            settings.deliveryCharge,
-
-          announcementText:
-            settings.announcementText || "",
-
-          currencyCode:
-            settings.currencyCode || "USD",
-
-          currencySymbol:
-            settings.currencySymbol || "$",
-        },
+        message:
+          "Coupon created successfully.",
+        coupon,
       });
     } catch (error) {
       console.error(
-        "Admin Public Settings Error:",
+        "Create coupon error:",
         error
       );
 
-      res.status(500).json({
+      // MongoDB duplicate key.
+      if (error.code === 11000) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "A coupon with this code already exists.",
+        });
+      }
+
+      // IMPORTANT:
+      // Return the actual Mongoose error.
+      return res.status(500).json({
         success: false,
-        message: error.message,
+        message:
+          error.message ||
+          "Failed to create coupon.",
+      });
+    }
+  }
+);
+
+// ==========================================
+// UPDATE COUPON
+// PUT /admin/coupons/:couponId
+// ==========================================
+
+router.put(
+  "/coupons/:couponId",
+  async (req, res) => {
+    try {
+      const {
+        code,
+        discountType,
+        discountValue,
+        minimumOrderAmount,
+        maximumDiscount,
+        expiryDate,
+        isActive,
+        usageLimit,
+      } = req.body;
+
+      const coupon =
+        await Coupon.findById(
+          req.params.couponId
+        );
+
+      if (!coupon) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Coupon not found.",
+        });
+      }
+
+      // ==========================================
+      // CODE
+      // ==========================================
+
+      const normalizedCode =
+        typeof code === "string"
+          ? code.trim().toUpperCase()
+          : coupon.code;
+
+      if (!normalizedCode) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Coupon code is required.",
+        });
+      }
+
+      if (
+        !/^[A-Z0-9_-]+$/.test(
+          normalizedCode
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Coupon code can contain only letters, numbers, hyphens, and underscores.",
+        });
+      }
+
+      // ==========================================
+      // DISCOUNT TYPE
+      // ==========================================
+
+      const finalDiscountType =
+        discountType ||
+        coupon.discountType;
+
+      if (
+        !["fixed", "percentage"].includes(
+          finalDiscountType
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid discount type.",
+        });
+      }
+
+      // ==========================================
+      // DISCOUNT VALUE
+      // ==========================================
+
+      const finalDiscountValue =
+        Number(
+          discountValue ??
+            coupon.discountValue
+        );
+
+      if (
+        !Number.isFinite(
+          finalDiscountValue
+        ) ||
+        finalDiscountValue <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Discount value must be greater than 0.",
+        });
+      }
+
+      if (
+        finalDiscountType ===
+          "percentage" &&
+        finalDiscountValue > 100
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Percentage discount cannot exceed 100%.",
+        });
+      }
+
+      // ==========================================
+      // MINIMUM ORDER
+      // ==========================================
+
+      const finalMinimum =
+        Number(
+          minimumOrderAmount ??
+            coupon.minimumOrderAmount ??
+            0
+        );
+
+      if (
+        !Number.isFinite(
+          finalMinimum
+        ) ||
+        finalMinimum < 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Minimum order amount must be 0 or greater.",
+        });
+      }
+
+      // ==========================================
+      // MAXIMUM DISCOUNT
+      // ==========================================
+
+      let finalMaximum = null;
+
+      if (
+        finalDiscountType ===
+        "percentage"
+      ) {
+        const maximumInput =
+          maximumDiscount !==
+          undefined
+            ? maximumDiscount
+            : coupon.maximumDiscount;
+
+        if (
+          maximumInput !== null &&
+          maximumInput !== undefined &&
+          String(
+            maximumInput
+          ).trim() !== ""
+        ) {
+          finalMaximum =
+            Number(maximumInput);
+
+          if (
+            !Number.isFinite(
+              finalMaximum
+            ) ||
+            finalMaximum <= 0
+          ) {
+            return res.status(400).json({
+              success: false,
+              message:
+                "Maximum discount must be greater than 0.",
+            });
+          }
+        }
+      }
+
+      // ==========================================
+      // EXPIRY DATE
+      // ==========================================
+
+      let finalExpiry = null;
+
+      if (
+        expiryDate !== undefined &&
+        expiryDate !== null &&
+        String(
+          expiryDate
+        ).trim() !== ""
+      ) {
+        const expiryString =
+          String(expiryDate).trim();
+
+        if (
+          /^\d{4}-\d{2}-\d{2}$/.test(
+            expiryString
+          )
+        ) {
+          finalExpiry = new Date(
+            `${expiryString}T23:59:59.999`
+          );
+        } else {
+          finalExpiry =
+            new Date(expiryString);
+        }
+
+        if (
+          Number.isNaN(
+            finalExpiry.getTime()
+          )
+        ) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Invalid expiry date.",
+          });
+        }
+
+        if (
+          finalExpiry <= new Date()
+        ) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Expiry date must be in the future.",
+          });
+        }
+      }
+
+      // ==========================================
+      // USAGE LIMIT
+      // ==========================================
+
+      let finalUsageLimit = null;
+
+      if (
+        usageLimit !== undefined &&
+        usageLimit !== null &&
+        String(
+          usageLimit
+        ).trim() !== ""
+      ) {
+        finalUsageLimit =
+          Number(usageLimit);
+
+        if (
+          !Number.isInteger(
+            finalUsageLimit
+          ) ||
+          finalUsageLimit <= 0
+        ) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Usage limit must be a whole number greater than 0.",
+          });
+        }
+
+        if (
+          finalUsageLimit <
+          Number(
+            coupon.usedCount || 0
+          )
+        ) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Usage limit cannot be lower than the number of coupons already used.",
+          });
+        }
+      }
+
+      // ==========================================
+      // CHECK DUPLICATE CODE
+      // ==========================================
+
+      const duplicate =
+        await Coupon.findOne({
+          code: normalizedCode,
+          _id: {
+            $ne: coupon._id,
+          },
+        });
+
+      if (duplicate) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "A coupon with this code already exists.",
+        });
+      }
+
+      // ==========================================
+      // UPDATE
+      // ==========================================
+
+      coupon.code =
+        normalizedCode;
+
+      coupon.discountType =
+        finalDiscountType;
+
+      coupon.discountValue =
+        Math.round(
+          finalDiscountValue * 100
+        ) / 100;
+
+      coupon.minimumOrderAmount =
+        Math.round(
+          finalMinimum * 100
+        ) / 100;
+
+      coupon.maximumDiscount =
+        finalMaximum === null
+          ? null
+          : Math.round(
+              finalMaximum * 100
+            ) / 100;
+
+      coupon.expiryDate =
+        finalExpiry;
+
+      coupon.isActive =
+        isActive !== false;
+
+      coupon.usageLimit =
+        finalUsageLimit;
+
+      await coupon.save();
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Coupon updated successfully.",
+        coupon,
+      });
+    } catch (error) {
+      console.error(
+        "Update coupon error:",
+        error
+      );
+
+      if (error.code === 11000) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "A coupon with this code already exists.",
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message:
+          error.message ||
+          "Failed to update coupon.",
+      });
+    }
+  }
+);
+
+// ==========================================
+// DELETE COUPON
+// DELETE /admin/coupons/:couponId
+// ==========================================
+
+router.delete(
+  "/coupons/:couponId",
+  async (req, res) => {
+    try {
+      const coupon =
+        await Coupon.findByIdAndDelete(
+          req.params.couponId
+        );
+
+      if (!coupon) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Coupon not found.",
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Coupon deleted successfully.",
+      });
+    } catch (error) {
+      console.error(
+        "Delete coupon error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          error.message ||
+          "Failed to delete coupon.",
       });
     }
   }

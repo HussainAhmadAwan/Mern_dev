@@ -9,6 +9,7 @@ import {
   getProductPrice,
   useCart,
 } from "../context/CartContext";
+import { getImageUrl } from "../api/config";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -41,38 +42,6 @@ const ProductDetails = () => {
 
   // Store error message.
   const [error, setError] = useState("");
-
-  // Convert uploaded image paths into usable browser URLs.
-      const getImageUrl = (imagePath) => {
-      if (!imagePath) {
-        return "";
-      }
-    
-      const image = String(imagePath).trim();
-    
-      if (
-        image.startsWith("http://") ||
-        image.startsWith("https://") ||
-        image.startsWith("data:")
-      ) {
-        return image;
-      }
-    
-      const backendUrl = (
-        import.meta.env.VITE_API_URL ||
-        "http://localhost:5050"
-      ).replace(/\/$/, "");
-    
-      if (image.startsWith("/uploads/")) {
-        return `${backendUrl}${image}`;
-      }
-    
-      if (image.startsWith("uploads/")) {
-        return `${backendUrl}/${image}`;
-      }
-    
-      return image;
-    };
 
   // Fetch product from MongoDB.
   useEffect(() => {
@@ -313,9 +282,7 @@ const ProductDetails = () => {
               <div className="flex h-[360px] w-full items-center justify-center sm:h-[420px]">
                 {mainImage ? (
                   <img
-                    src={getImageUrl(
-                      mainImage
-                    )}
+                    src={getImageUrl(mainImage)}
                     alt={product.name}
                     className="h-full w-full object-contain p-4 sm:p-6"
                   />
@@ -328,24 +295,20 @@ const ProductDetails = () => {
             </div>
 
             {/* Additional Product Images */}
-            {uniqueProductImages.length >
-              0 && (
+            {uniqueProductImages.length > 0 && (
               <div className="mx-auto mt-4 w-full max-w-[560px]">
                 <div className="flex gap-3 overflow-x-auto pb-2">
                   {uniqueProductImages.map(
                     (image, index) => {
                       const isSelected =
-                        image ===
-                        mainImage;
+                        image === mainImage;
 
                       return (
                         <button
                           key={`${image}-${index}`}
                           type="button"
                           onClick={() =>
-                            setSelectedImage(
-                              image
-                            )
+                            setSelectedImage(image)
                           }
                           aria-label={`View product image ${
                             index + 1
@@ -357,9 +320,7 @@ const ProductDetails = () => {
                           }`}
                         >
                           <img
-                            src={getImageUrl(
-                              image
-                            )}
+                            src={getImageUrl(image)}
                             alt={`${product.name} ${
                               index + 1
                             }`}
@@ -393,8 +354,7 @@ const ProductDetails = () => {
               ★★★★★
 
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                ({product.rating || 0}{" "}
-                Rating)
+                ({product.rating || 0} Rating)
               </span>
             </div>
 
@@ -420,12 +380,10 @@ const ProductDetails = () => {
                         )}
                   </span>
 
-                  {originalPrice >
-                    0 &&
+                  {originalPrice > 0 &&
                     Number(
                       product.discountedPrice
-                    ) <
-                      originalPrice && (
+                    ) < originalPrice && (
                       <span className="shrink-0 rounded-md bg-red-100 px-2 py-1 text-xs font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
                         Save{" "}
                         {Math.round(
@@ -454,10 +412,7 @@ const ProductDetails = () => {
             {/* Selected Quantity Total */}
             <div className="mt-3 break-words text-sm text-gray-500 dark:text-gray-400">
               Total for {quantity} item
-              {quantity === 1
-                ? ""
-                : "s"}
-              :{" "}
+              {quantity === 1 ? "" : "s"}:{" "}
               <span className="font-bold text-gray-800 dark:text-white">
                 {currencyLoading
                   ? "..."
@@ -495,12 +450,8 @@ const ProductDetails = () => {
               <div className="flex h-10 shrink-0 overflow-hidden rounded-lg border-2 border-gray-300 bg-white shadow-sm dark:border-slate-600 dark:bg-slate-800">
                 <button
                   type="button"
-                  onClick={
-                    decreaseQuantity
-                  }
-                  disabled={
-                    quantity === 1
-                  }
+                  onClick={decreaseQuantity}
+                  disabled={quantity === 1}
                   aria-label="Decrease quantity"
                   className="flex w-10 items-center justify-center border-r border-gray-300 bg-gray-100 text-xl font-bold text-gray-800 transition hover:bg-orange-100 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
                 >
@@ -513,13 +464,10 @@ const ProductDetails = () => {
 
                 <button
                   type="button"
-                  onClick={
-                    increaseQuantity
-                  }
+                  onClick={increaseQuantity}
                   disabled={
                     Number(
-                      product.stock ||
-                        0
+                      product.stock || 0
                     ) <= quantity
                   }
                   aria-label="Increase quantity"
@@ -534,9 +482,7 @@ const ProductDetails = () => {
             <div className="mt-6 flex w-full min-w-0 flex-col gap-3 sm:flex-row">
               <button
                 type="button"
-                onClick={
-                  handleAddToCart
-                }
+                onClick={handleAddToCart}
                 disabled={
                   Number(
                     product.stock || 0
@@ -553,9 +499,7 @@ const ProductDetails = () => {
 
               <button
                 type="button"
-                onClick={
-                  handleBuyNow
-                }
+                onClick={handleBuyNow}
                 disabled={
                   Number(
                     product.stock || 0
@@ -569,32 +513,20 @@ const ProductDetails = () => {
 
             {/* Dynamic Product Features */}
             <div className="mt-7 space-y-2 text-sm text-gray-700 dark:text-gray-300">
-              {product.freeShipping !==
-                false && (
-                <p>
-                  ✅ Free Shipping
-                </p>
+              {product.freeShipping !== false && (
+                <p>✅ Free Shipping</p>
               )}
 
-              {product.returns30Days !==
-                false && (
-                <p>
-                  ✅ 30-Day Returns
-                </p>
+              {product.returns30Days !== false && (
+                <p>✅ 30-Day Returns</p>
               )}
 
-              {product.secureCheckout !==
-                false && (
-                <p>
-                  ✅ Secure Checkout
-                </p>
+              {product.secureCheckout !== false && (
+                <p>✅ Secure Checkout</p>
               )}
 
-              {product.warranty1Year !==
-                false && (
-                <p>
-                  ✅ 1-Year Warranty
-                </p>
+              {product.warranty1Year !== false && (
+                <p>✅ 1-Year Warranty</p>
               )}
             </div>
           </div>
@@ -613,8 +545,7 @@ const ProductDetails = () => {
 
         {/* Related Products */}
         {!relatedLoading &&
-          relatedProducts.length >
-            0 && (
+          relatedProducts.length > 0 && (
             <div className="mt-10 w-full min-w-0 sm:mt-12">
               <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
@@ -660,16 +591,14 @@ const ProductDetails = () => {
                       ) &&
                       Number(
                         relatedProduct.discountedPrice
-                      ) <
-                        relatedOriginalPrice;
+                      ) < relatedOriginalPrice;
 
                     const relatedImage =
                       relatedProduct.image ||
                       (Array.isArray(
                         relatedProduct.images
                       ) &&
-                      relatedProduct
-                        .images.length >
+                      relatedProduct.images.length >
                         0
                         ? relatedProduct
                             .images[0]

@@ -1,13 +1,8 @@
-
 const mongoose = require("mongoose");
 
-// ==========================================
 // ORDER STATUS HISTORY SCHEMA
-// ==========================================
-
 const orderStatusHistorySchema = new mongoose.Schema(
   {
-    // Status before this change.
     from: {
       type: String,
       enum: [
@@ -20,7 +15,6 @@ const orderStatusHistorySchema = new mongoose.Schema(
       default: null,
     },
 
-    // Status after this change.
     to: {
       type: String,
       enum: [
@@ -33,58 +27,72 @@ const orderStatusHistorySchema = new mongoose.Schema(
       required: true,
     },
 
-    // User/admin who made the change.
     changedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
 
-    // Role of the person who made the change.
     changedByRole: {
       type: String,
       enum: ["admin", "customer", "system"],
       default: "system",
     },
 
-    // Date and time of the status change.
     changedAt: {
       type: Date,
       default: Date.now,
     },
   },
-  {
-    _id: false,
-  }
+  { _id: false }
 );
 
-// ==========================================
-// ORDER SCHEMA
-// ==========================================
+// COUPON SNAPSHOT SCHEMA
+//
+// Important:
+// We store the coupon information used at the time of
+// purchase so future coupon edits do not change old orders.
+const orderCouponSchema = new mongoose.Schema(
+  {
+    code: {
+      type: String,
+      trim: true,
+      uppercase: true,
+    },
 
+    discountType: {
+      type: String,
+      enum: ["fixed", "percentage"],
+    },
+
+    discountValue: {
+      type: Number,
+      min: 0,
+    },
+
+    discountAmount: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+  },
+  { _id: false }
+);
+
+// ORDER SCHEMA
 const orderSchema = new mongoose.Schema(
   {
-    // ==========================================
-    // USER
-    // ==========================================
-
-    // Store the user who placed this order.
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
 
-    // Store the short frontend Order ID.
     orderId: {
       type: String,
       default: null,
       trim: true,
     },
-
-    // ==========================================
-    // CUSTOMER INFORMATION
-    // ==========================================
 
     customer: {
       firstName: {
@@ -123,18 +131,10 @@ const orderSchema = new mongoose.Schema(
       },
     },
 
-    // ==========================================
-    // PAYMENT
-    // ==========================================
-
     paymentMethod: {
       type: String,
       required: true,
     },
-
-    // ==========================================
-    // ORDER ITEMS
-    // ==========================================
 
     items: [
       {
@@ -153,8 +153,6 @@ const orderSchema = new mongoose.Schema(
           default: "",
         },
 
-        // Price captured at the time the order
-        // was placed.
         price: {
           type: Number,
           required: true,
@@ -169,47 +167,45 @@ const orderSchema = new mongoose.Schema(
       },
     ],
 
-    // ==========================================
-    // ORDER QUANTITIES
-    // ==========================================
-
     totalItems: {
       type: Number,
       required: true,
       min: 1,
     },
 
-    // ==========================================
-    // ORDER TOTALS
-    // ==========================================
-
-    // Product subtotal before delivery.
     subtotal: {
       type: Number,
       required: true,
       min: 0,
     },
 
-    // Delivery charge captured when the order
-    // was placed.
+    // ==========================================
+    // COUPON
+    // ==========================================
+
+    coupon: {
+      type: orderCouponSchema,
+      default: null,
+    },
+
+    couponDiscount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     deliveryCharge: {
       type: Number,
       required: true,
       min: 0,
     },
 
-    // Final amount = subtotal + deliveryCharge.
     totalPrice: {
       type: Number,
       required: true,
       min: 0,
     },
 
-    // ==========================================
-    // CURRENCY SNAPSHOT
-    // ==========================================
-
-    // Currency used when this order was placed.
     currencyCode: {
       type: String,
       required: true,
@@ -218,18 +214,12 @@ const orderSchema = new mongoose.Schema(
       default: "USD",
     },
 
-    // Currency symbol used when this order
-    // was placed.
     currencySymbol: {
       type: String,
       required: true,
       trim: true,
       default: "$",
     },
-
-    // ==========================================
-    // ORDER STATUS
-    // ==========================================
 
     status: {
       type: String,
@@ -243,22 +233,17 @@ const orderSchema = new mongoose.Schema(
       default: "Pending",
     },
 
-    // Keep a permanent record of every status change.
     statusHistory: {
       type: [orderStatusHistorySchema],
       default: [],
     },
   },
+
   {
     timestamps: true,
   }
 );
 
-// ==========================================
-// ORDER MODEL
-// ==========================================
-
 const Order = mongoose.model("Order", orderSchema);
 
 module.exports = Order;
-

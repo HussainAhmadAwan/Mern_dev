@@ -1,25 +1,18 @@
 import axios from "axios";
+import { API_BASE_URL } from "./config";
 
 // ======================================================
-// API BASE URL
+// MAIN API INSTANCE
 // ======================================================
-//
-// Local development:
-// VITE_API_URL=http://localhost:5050
-//
-// Production:
-// VITE_API_URL=https://your-production-backend-url.com
-//
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:5050";
 
-// Create the main API instance.
 const API = axios.create({
-  baseURL: API_BASE_URL.replace(/\/$/, ""),
+  baseURL: API_BASE_URL,
 });
 
-// Add JWT token to every request when available.
+// ======================================================
+// ADD JWT TOKEN TO EVERY REQUEST
+// ======================================================
+
 API.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");

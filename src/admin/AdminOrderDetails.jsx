@@ -7,6 +7,7 @@ import {
   useParams,
 } from "react-router-dom";
 import api from "../api/axios";
+import { getImageUrl } from "../api/config";
 import { getStatusClasses } from "../utils/orderStatus";
 
 const AdminOrderDetails = () => {
@@ -46,16 +47,19 @@ const AdminOrderDetails = () => {
           );
 
         if (response.data.success) {
-          setOrder(
-            response.data.order
-          );
+          const fetchedOrder =
+            response.data.order;
+
+          setOrder(fetchedOrder);
 
           setStatus(
-            response.data.order.status
+            fetchedOrder.status ||
+              "Pending"
           );
         } else {
           setError(
-            "Failed to load order details."
+            response.data.message ||
+              "Failed to load order details."
           );
         }
       } catch (error) {
@@ -129,12 +133,14 @@ const AdminOrderDetails = () => {
           );
 
         if (response.data.success) {
-          setOrder(
-            response.data.order
-          );
+          const updatedOrder =
+            response.data.order;
+
+          setOrder(updatedOrder);
 
           setStatus(
-            response.data.order.status
+            updatedOrder.status ||
+              "Pending"
           );
 
           setStatusMessage(
@@ -207,6 +213,13 @@ const AdminOrderDetails = () => {
         <p className="break-words text-gray-500 dark:text-gray-400">
           Order not found.
         </p>
+
+        <Link
+          to="/admin/orders"
+          className="mt-5 inline-flex items-center rounded-lg bg-gray-800 px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-700"
+        >
+          ← Back to Orders
+        </Link>
       </div>
     );
   }
@@ -227,28 +240,13 @@ const AdminOrderDetails = () => {
 
   const statusClasses =
     getStatusClasses(
-      order.status
+      order.status ||
+        "Pending"
     );
 
   // ==========================================
-  // IMAGE URL
+  // CURRENCY
   // ==========================================
-
-  const getImageUrl = (
-    image
-  ) => {
-    if (!image) {
-      return "";
-    }
-
-    if (
-      image.startsWith("http")
-    ) {
-      return image;
-    }
-
-    return `http://localhost:5050${image}`;
-  };
 
   const currencyCode =
     String(
@@ -264,8 +262,33 @@ const AdminOrderDetails = () => {
         "$"
     ).trim() || "$";
 
+  // ==========================================
+  // SAFE ORDER VALUES
+  // ==========================================
+
+  const subtotal =
+    Number(
+      order.subtotal || 0
+    );
+
+  const deliveryCharge =
+    Number(
+      order.deliveryCharge || 0
+    );
+
+  const totalPrice =
+    Number(
+      order.totalPrice || 0
+    );
+
+  const totalItems =
+    Number(
+      order.totalItems || 0
+    );
+
   return (
     <div className="w-full min-w-0 max-w-full space-y-6 overflow-x-hidden lg:space-y-8">
+
       {/* ==========================================
           HEADER
       ========================================== */}
@@ -294,31 +317,37 @@ const AdminOrderDetails = () => {
       ========================================== */}
 
       <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-4 md:gap-6">
+
         {/* Order ID */}
+
         <div className="min-w-0 overflow-hidden rounded-xl bg-white p-5 shadow dark:bg-slate-800 sm:p-6">
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Order ID
           </p>
 
-          <p className="mt-2 break-all font-mono font-semibold text-gray-800 dark:text-white">
+          <p className="mt-2 break-all font-mono text-sm font-semibold text-gray-800 dark:text-white">
             {order._id}
           </p>
         </div>
 
         {/* Order Date */}
+
         <div className="min-w-0 overflow-hidden rounded-xl bg-white p-5 shadow dark:bg-slate-800 sm:p-6">
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Order Date
           </p>
 
           <p className="mt-2 break-words font-semibold text-gray-800 dark:text-white">
-            {new Date(
-              order.createdAt
-            ).toLocaleString()}
+            {order.createdAt
+              ? new Date(
+                  order.createdAt
+                ).toLocaleString()
+              : "N/A"}
           </p>
         </div>
 
         {/* Currency */}
+
         <div className="min-w-0 overflow-hidden rounded-xl bg-white p-5 shadow dark:bg-slate-800 sm:p-6">
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Currency
@@ -331,6 +360,7 @@ const AdminOrderDetails = () => {
         </div>
 
         {/* Status */}
+
         <div className="min-w-0 overflow-hidden rounded-xl bg-white p-5 shadow dark:bg-slate-800 sm:p-6">
           <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
             Order Status
@@ -340,7 +370,8 @@ const AdminOrderDetails = () => {
             <span
               className={`inline-flex max-w-full rounded-full px-3 py-1 text-sm font-semibold ${statusClasses}`}
             >
-              {order.status}
+              {order.status ||
+                "Pending"}
             </span>
           </div>
 
@@ -352,8 +383,9 @@ const AdminOrderDetails = () => {
               );
 
               setStatusMessage("");
+              setError("");
             }}
-            className="w-full min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 outline-none transition focus:border-orange-500 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
+            className="w-full min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
           >
             <option value="Pending">
               Pending
@@ -406,13 +438,18 @@ const AdminOrderDetails = () => {
       ========================================== */}
 
       <div className="grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
+
         {/* Customer Information */}
+
         <div className="min-w-0 overflow-hidden rounded-xl bg-white p-5 shadow dark:bg-slate-800 sm:p-6">
           <h2 className="mb-6 break-words text-xl font-bold text-gray-800 dark:text-white">
             Customer Information
           </h2>
 
           <div className="space-y-5">
+
+            {/* Name */}
+
             <div className="min-w-0">
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Name
@@ -422,6 +459,8 @@ const AdminOrderDetails = () => {
                 {customerName}
               </p>
             </div>
+
+            {/* Email */}
 
             <div className="min-w-0">
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -434,6 +473,8 @@ const AdminOrderDetails = () => {
               </p>
             </div>
 
+            {/* Phone */}
+
             <div className="min-w-0">
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Phone
@@ -444,6 +485,8 @@ const AdminOrderDetails = () => {
                   "N/A"}
               </p>
             </div>
+
+            {/* Shipping Address */}
 
             <div className="min-w-0">
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -459,8 +502,7 @@ const AdminOrderDetails = () => {
                 {order.customer?.city ||
                   ""}
 
-                {order.customer
-                  ?.zipCode
+                {order.customer?.zipCode
                   ? `, ${order.customer.zipCode}`
                   : ""}
               </p>
@@ -469,12 +511,16 @@ const AdminOrderDetails = () => {
         </div>
 
         {/* Payment Information */}
+
         <div className="min-w-0 overflow-hidden rounded-xl bg-white p-5 shadow dark:bg-slate-800 sm:p-6">
           <h2 className="mb-6 break-words text-xl font-bold text-gray-800 dark:text-white">
             Payment Information
           </h2>
 
           <div className="space-y-5">
+
+            {/* Payment Method */}
+
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Payment Method
@@ -486,15 +532,19 @@ const AdminOrderDetails = () => {
               </p>
             </div>
 
+            {/* Total Items */}
+
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Total Items
               </p>
 
               <p className="font-medium text-gray-800 dark:text-white">
-                {order.totalItems}
+                {totalItems}
               </p>
             </div>
+
+            {/* Subtotal */}
 
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -503,11 +553,12 @@ const AdminOrderDetails = () => {
 
               <p className="break-words font-semibold text-gray-800 dark:text-white">
                 {formatOrderPrice(
-                  order.subtotal ||
-                    0
+                  subtotal
                 )}
               </p>
             </div>
+
+            {/* Delivery Charges */}
 
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -515,12 +566,15 @@ const AdminOrderDetails = () => {
               </p>
 
               <p className="break-words font-semibold text-gray-800 dark:text-white">
-                {formatOrderPrice(
-                  order.deliveryCharge ||
-                    0
-                )}
+                {deliveryCharge > 0
+                  ? formatOrderPrice(
+                      deliveryCharge
+                    )
+                  : "Free"}
               </p>
             </div>
+
+            {/* Total Amount */}
 
             <div className="border-t border-gray-200 pt-4 dark:border-gray-700">
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -529,8 +583,7 @@ const AdminOrderDetails = () => {
 
               <p className="break-words text-2xl font-bold text-orange-600">
                 {formatOrderPrice(
-                  order.totalPrice ||
-                    0
+                  totalPrice
                 )}
               </p>
             </div>
@@ -543,6 +596,7 @@ const AdminOrderDetails = () => {
       ========================================== */}
 
       <div className="w-full min-w-0 overflow-hidden rounded-xl bg-white shadow dark:bg-slate-800">
+
         <div className="border-b border-gray-200 p-5 dark:border-gray-700 sm:p-6">
           <h2 className="break-words text-xl font-bold text-gray-800 dark:text-white">
             Ordered Products
@@ -551,8 +605,10 @@ const AdminOrderDetails = () => {
 
         <div className="w-full min-w-0 overflow-x-auto">
           <table className="w-full min-w-[700px] text-left">
+
             <thead className="bg-gray-50 dark:bg-slate-700">
               <tr>
+
                 <th className="px-5 py-4 text-sm font-semibold text-gray-700 dark:text-gray-200 sm:px-6">
                   Product
                 </th>
@@ -568,88 +624,114 @@ const AdminOrderDetails = () => {
                 <th className="px-5 py-4 text-sm font-semibold text-gray-700 dark:text-gray-200 sm:px-6">
                   Subtotal
                 </th>
+
               </tr>
             </thead>
 
             <tbody>
               {order.items?.map(
-                (item, index) => (
-                  <tr
-                    key={
-                      item.productId ||
-                      index
-                    }
-                    className="border-t border-gray-200 dark:border-gray-700"
-                  >
-                    {/* Product */}
-                    <td className="px-5 py-4 sm:px-6">
-                      <div className="flex min-w-0 items-center gap-4">
-                        {item.image ? (
-                          <img
-                            src={getImageUrl(
-                              item.image
-                            )}
-                            alt={
-                              item.name
-                            }
-                            className="h-16 w-16 shrink-0 rounded-lg object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-xs text-gray-400 dark:bg-slate-700">
-                            No Image
-                          </div>
-                        )}
+                (item, index) => {
+                  const itemPrice =
+                    Number(
+                      item.price || 0
+                    );
 
-                        <div className="min-w-0">
-                          <p className="break-words font-semibold text-gray-800 dark:text-white">
-                            {item.name}
-                          </p>
+                  const itemQuantity =
+                    Number(
+                      item.quantity || 0
+                    );
 
-                          {item.productId && (
-                            <p className="mt-1 break-all text-xs text-gray-500 dark:text-gray-400">
-                              ID:{" "}
-                              {
-                                item.productId
+                  const itemSubtotal =
+                    itemPrice *
+                    itemQuantity;
+
+                  return (
+                    <tr
+                      key={
+                        item.productId ||
+                        `${item.name || "product"}-${index}`
+                      }
+                      className="border-t border-gray-200 dark:border-gray-700"
+                    >
+
+                      {/* Product */}
+
+                      <td className="px-5 py-4 sm:px-6">
+                        <div className="flex min-w-0 items-center gap-4">
+
+                          {item.image ? (
+                            <img
+                              src={getImageUrl(
+                                item.image
+                              )}
+                              alt={
+                                item.name ||
+                                "Product"
                               }
-                            </p>
+                              className="h-16 w-16 shrink-0 rounded-lg object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display =
+                                  "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-xs text-gray-400 dark:bg-slate-700">
+                              No Image
+                            </div>
                           )}
+
+                          <div className="min-w-0">
+                            <p className="break-words font-semibold text-gray-800 dark:text-white">
+                              {item.name ||
+                                "Product"}
+                            </p>
+
+                            {item.productId && (
+                              <p className="mt-1 break-all text-xs text-gray-500 dark:text-gray-400">
+                                ID:{" "}
+                                {
+                                  item.productId
+                                }
+                              </p>
+                            )}
+                          </div>
+
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Price */}
-                    <td className="whitespace-nowrap px-5 py-4 text-gray-700 dark:text-gray-300 sm:px-6">
-                      {formatOrderPrice(
-                        item.price ||
-                          0
-                      )}
-                    </td>
+                      {/* Price */}
 
-                    {/* Quantity */}
-                    <td className="whitespace-nowrap px-5 py-4 text-gray-700 dark:text-gray-300 sm:px-6">
-                      {item.quantity}
-                    </td>
+                      <td className="whitespace-nowrap px-5 py-4 text-gray-700 dark:text-gray-300 sm:px-6">
+                        {formatOrderPrice(
+                          itemPrice
+                        )}
+                      </td>
 
-                    {/* Subtotal */}
-                    <td className="whitespace-nowrap px-5 py-4 font-semibold text-orange-600 sm:px-6">
-                      {formatOrderPrice(
-                        Number(
-                          item.price ||
-                            0
-                        ) *
-                          Number(
-                            item.quantity ||
-                              0
-                          )
-                      )}
-                    </td>
-                  </tr>
-                )
+                      {/* Quantity */}
+
+                      <td className="whitespace-nowrap px-5 py-4 text-gray-700 dark:text-gray-300 sm:px-6">
+                        {itemQuantity}
+                      </td>
+
+                      {/* Subtotal */}
+
+                      <td className="whitespace-nowrap px-5 py-4 font-semibold text-orange-600 sm:px-6">
+                        {formatOrderPrice(
+                          itemSubtotal
+                        )}
+                      </td>
+
+                    </tr>
+                  );
+                }
               )}
             </tbody>
 
+            {/* Order Total */}
+
             <tfoot>
               <tr className="border-t-2 border-gray-200 dark:border-gray-600">
+
                 <td
                   colSpan="3"
                   className="px-5 py-5 text-right font-bold text-gray-800 dark:text-white sm:px-6"
@@ -659,12 +741,13 @@ const AdminOrderDetails = () => {
 
                 <td className="whitespace-nowrap px-5 py-5 text-xl font-bold text-orange-600 sm:px-6">
                   {formatOrderPrice(
-                    order.totalPrice ||
-                      0
+                    totalPrice
                   )}
                 </td>
+
               </tr>
             </tfoot>
+
           </table>
         </div>
       </div>

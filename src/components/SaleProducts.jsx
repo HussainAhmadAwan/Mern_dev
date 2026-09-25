@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+
 import API from "../api/api";
+import { getImageUrl } from "../api/config";
+
 import {
   useCart,
   getProductPrice,
@@ -30,7 +33,9 @@ const SaleProducts = () => {
         "/api/products?sale=true"
       );
 
-      setProducts(response.data.products || []);
+      setProducts(
+        response.data.products || []
+      );
     } catch (error) {
       console.log(
         "Failed to load sale products:",
@@ -63,79 +68,6 @@ const SaleProducts = () => {
       setProductColumns(4);
     }
   };
-
-  // Convert device-uploaded images to the backend URL while keeping URL images unchanged.
-  // const getImageUrl = (image) => {
-  //   if (!image || typeof image !== "string") {
-  //     return "/placeholder.jpg";
-  //   }
-
-  //   const trimmedImage = image.trim();
-
-  //   if (!trimmedImage) {
-  //     return "/placeholder.jpg";
-  //   }
-
-  //   if (
-  //     trimmedImage.startsWith("http://") ||
-  //     trimmedImage.startsWith("https://") ||
-  //     trimmedImage.startsWith("data:")
-  //   ) {
-  //     return trimmedImage;
-  //   }
-
-  //   const normalizedPath = trimmedImage.startsWith("/")
-  //     ? trimmedImage
-  //     : `/${trimmedImage}`;
-
-  //   if (normalizedPath.startsWith("/uploads/")) {
-  //     return `http://localhost:5050${normalizedPath}`;
-  //   }
-
-  //   return trimmedImage;
-  // };
-
-
-const getImageUrl = (image) => {
-  if (!image || typeof image !== "string") {
-    return "/placeholder.jpg";
-  }
-
-  const trimmedImage = image.trim();
-
-  if (!trimmedImage) {
-    return "/placeholder.jpg";
-  }
-
-  if (
-    trimmedImage.startsWith("http://") ||
-    trimmedImage.startsWith("https://") ||
-    trimmedImage.startsWith("data:")
-  ) {
-    return trimmedImage;
-  }
-
-  const normalizedPath = trimmedImage.startsWith("/")
-    ? trimmedImage
-    : `/${trimmedImage}`;
-
-  if (normalizedPath.startsWith("/uploads/")) {
-    const backendUrl = (
-      import.meta.env.VITE_API_URL ||
-      "http://localhost:5050"
-    ).replace(/\/$/, "");
-
-    return `${backendUrl}${normalizedPath}`;
-  }
-
-  return trimmedImage;
-};
-
-
-
-
-
-
 
   const handleAddToCart = (product) => {
     addToCart(product);
@@ -181,6 +113,7 @@ const getImageUrl = (image) => {
   return (
     <section className="w-full max-w-full overflow-hidden bg-white px-3 py-7 transition-colors duration-300 dark:bg-slate-900 sm:px-6 sm:py-8 lg:px-8">
       <div className="mx-auto w-full min-w-0 max-w-7xl">
+
         {/* Section heading */}
         <div className="mb-5 flex min-w-0 items-end justify-between gap-3 sm:mb-6 sm:gap-4">
           <div className="min-w-0">
@@ -248,6 +181,7 @@ const getImageUrl = (image) => {
                     )
                   : 0;
 
+              // Use centralized config.js image URL helper.
               const productImage = getImageUrl(
                 product.image
               );
@@ -259,6 +193,7 @@ const getImageUrl = (image) => {
                   className="group flex h-full min-w-0 max-w-full overflow-hidden rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
                 >
                   <article className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:border-orange-200 group-hover:shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:group-hover:border-orange-500/40">
+
                     {/* Main product image */}
                     <div
                       className={`relative w-full shrink-0 overflow-hidden bg-gray-100 dark:bg-slate-700 ${imageHeightClass}`}
@@ -285,7 +220,7 @@ const getImageUrl = (image) => {
                     <div
                       className={`flex min-h-0 flex-1 min-w-0 flex-col overflow-hidden ${cardPaddingClass}`}
                     >
-                      {/* Keep product names at the same height. */}
+                      {/* Keep product names at the same height */}
                       <h3
                         className={`min-h-[2.5rem] min-w-0 overflow-hidden break-words font-semibold leading-5 text-gray-900 transition-colors group-hover:text-orange-600 dark:text-white dark:group-hover:text-orange-400 line-clamp-2 ${
                           productColumns >= 5
@@ -296,7 +231,7 @@ const getImageUrl = (image) => {
                         {product.name}
                       </h3>
 
-                      {/* Keep descriptions at the same height. */}
+                      {/* Keep descriptions at the same height */}
                       <p
                         className={`mt-1 min-h-[2rem] min-w-0 overflow-hidden break-words text-gray-600 dark:text-gray-300 line-clamp-2 ${
                           productColumns >= 5
@@ -307,7 +242,7 @@ const getImageUrl = (image) => {
                         {product.description}
                       </p>
 
-                      {/* Price and button are always aligned at the bottom. */}
+                      {/* Price and button are always aligned at the bottom */}
                       <div
                         className={`mt-auto min-w-0 ${
                           productColumns >= 5
@@ -346,8 +281,9 @@ const getImageUrl = (image) => {
                         <button
                           type="button"
                           disabled={
-                            Number(product.stock || 0) <=
-                            0
+                            Number(
+                              product.stock || 0
+                            ) <= 0
                           }
                           onClick={(event) => {
                             event.preventDefault();
@@ -364,8 +300,9 @@ const getImageUrl = (image) => {
                             }
                           }}
                           className={`mt-2 w-full rounded-lg px-2.5 py-2 text-xs font-medium text-white shadow-sm transition-all duration-200 sm:text-sm ${
-                            Number(product.stock || 0) <=
-                            0
+                            Number(
+                              product.stock || 0
+                            ) <= 0
                               ? "cursor-not-allowed bg-gray-400"
                               : "bg-orange-600 hover:bg-orange-700 active:scale-[0.98]"
                           }`}
@@ -390,4 +327,3 @@ const getImageUrl = (image) => {
 };
 
 export default SaleProducts;
-

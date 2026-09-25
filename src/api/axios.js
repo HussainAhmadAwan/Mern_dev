@@ -1,29 +1,18 @@
 import axios from "axios";
+import { API_BASE_URL } from "./config";
 
 // ======================================================
-// API BASE URL
+// ADMIN API INSTANCE
 // ======================================================
-//
-// Local development:
-// VITE_API_URL=http://localhost:5050
-//
-// Production:
-// VITE_API_URL=https://your-production-backend-url.com
-//
-// IMPORTANT:
-// Vite only exposes frontend environment variables
-// beginning with VITE_.
-//
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:5050";
 
-// Create API instance.
 const api = axios.create({
-  baseURL: API_BASE_URL.replace(/\/$/, ""),
+  baseURL: API_BASE_URL,
 });
 
-// Add JWT to every request.
+// ======================================================
+// ADD JWT TOKEN TO EVERY REQUEST
+// ======================================================
+
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");

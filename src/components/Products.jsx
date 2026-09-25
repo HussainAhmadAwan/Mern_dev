@@ -4,7 +4,10 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import React, { useEffect, useState } from "react";
+
 import API from "../api/api";
+import { getImageUrl } from "../api/config";
+
 import {
   useCart,
   getProductPrice,
@@ -19,7 +22,6 @@ const Products = () => {
   } = useCart();
 
   const navigate = useNavigate();
-
   const [searchParams] = useSearchParams();
 
   const [products, setProducts] = useState([]);
@@ -55,7 +57,9 @@ const Products = () => {
     try {
       const response = await API.get("/api/products");
 
-      setProducts(response.data.products || []);
+      setProducts(
+        response.data.products || []
+      );
     } catch (error) {
       console.log(
         "Failed to load products:",
@@ -86,38 +90,6 @@ const Products = () => {
       setProductColumns(4);
     }
   };
-
-  // Convert backend upload paths into browser-ready image URLs.
-     const getImageUrl = (imagePath) => {
-       if (!imagePath) {
-         return "";
-       }
-     
-       const image = String(imagePath).trim();
-     
-       if (
-         image.startsWith("http://") ||
-         image.startsWith("https://") ||
-         image.startsWith("data:")
-       ) {
-         return image;
-       }
-     
-       const backendUrl = (
-         import.meta.env.VITE_API_URL ||
-         "http://localhost:5050"
-       ).replace(/\/$/, "");
-     
-       if (image.startsWith("/uploads/")) {
-         return `${backendUrl}${image}`;
-       }
-     
-       if (image.startsWith("uploads/")) {
-         return `${backendUrl}/${image}`;
-       }
-     
-       return image;
-     };
 
   // Apply search, category, and sale filters.
   const filteredProducts = products.filter(
@@ -209,18 +181,22 @@ const Products = () => {
 
   // Work out the page heading.
   let heading = "All Products";
+
   let description =
     "Discover our complete collection.";
 
   if (saleFilter) {
     heading = "On Sale";
+
     description =
       "Grab these products at special prices.";
   } else if (categoryFilter) {
     heading = categoryFilter;
+
     description = `Explore our ${categoryFilter} products.`;
   } else if (searchText) {
     heading = `Search Results for "${searchText}"`;
+
     description = `${filteredProducts.length} product${
       filteredProducts.length === 1
         ? ""
@@ -231,6 +207,7 @@ const Products = () => {
   return (
     <section className="w-full max-w-full overflow-hidden bg-gray-50 px-3 py-7 transition-colors duration-300 dark:bg-slate-900/50 sm:px-6 sm:py-9 lg:px-8">
       <div className="mx-auto w-full min-w-0 max-w-7xl">
+
         {/* Page heading */}
         <div className="mb-6 w-full min-w-0 text-center sm:mb-8">
           <h2 className="break-words text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl lg:text-4xl">
@@ -311,6 +288,7 @@ const Products = () => {
                     )
                   : 0;
 
+              // Use the centralized config.js image helper.
               const imageUrl = getImageUrl(
                 product.image
               );
@@ -322,6 +300,7 @@ const Products = () => {
                   className="group flex min-w-0 max-w-full"
                 >
                   <article className="flex min-w-0 w-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:border-orange-200 group-hover:shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:group-hover:border-orange-500/40 dark:group-hover:shadow-orange-950/20">
+
                     {/* Product image */}
                     <div
                       className={`relative w-full max-w-full shrink-0 overflow-hidden bg-gray-100 dark:bg-slate-700 ${imageHeightClass}`}
@@ -350,8 +329,7 @@ const Products = () => {
                       )}
 
                       {/* Out of stock badge */}
-                      {Number(product.stock || 0) <=
-                        0 && (
+                      {Number(product.stock || 0) <= 0 && (
                         <div className="absolute right-2 top-2 max-w-[calc(100%-1rem)] rounded-full bg-gray-900/80 px-2 py-1 text-[10px] font-semibold text-white sm:right-3 sm:top-3 sm:px-2.5 sm:py-1 sm:text-xs">
                           Out of Stock
                         </div>
@@ -364,7 +342,7 @@ const Products = () => {
                     <div
                       className={`flex min-w-0 flex-1 flex-col overflow-hidden ${cardPaddingClass}`}
                     >
-                      {/* Product name uses a fixed two-line area. */}
+                      {/* Product name */}
                       <h3
                         className={`min-w-0 break-words font-semibold leading-5 text-gray-900 transition-colors duration-200 group-hover:text-orange-600 dark:text-white dark:group-hover:text-orange-400 ${productNameClass}`}
                         style={{
@@ -381,7 +359,7 @@ const Products = () => {
                         {product.name}
                       </h3>
 
-                      {/* Description uses a fixed two-line area. */}
+                      {/* Description */}
                       <p
                         className={`mt-1 min-w-0 break-words leading-5 text-gray-600 dark:text-gray-300 ${productDescriptionClass}`}
                         style={{
@@ -479,4 +457,3 @@ const Products = () => {
 };
 
 export default Products;
-

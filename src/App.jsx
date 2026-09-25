@@ -32,11 +32,10 @@ import AdminOrderDetails from "./admin/AdminOrderDetails";
 import AdminUsers from "./admin/AdminUsers";
 import AdminUserDetails from "./admin/AdminUserDetails";
 import AdminSettings from "./admin/AdminSettings";
+import AdminCoupons from "./admin/AdminCoupons";
 
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
-
-
 
 import {
   createBrowserRouter,
@@ -121,9 +120,7 @@ const router = createBrowserRouter([
         element: (
           <>
             <Navbar />
-
             <Profile />
-
             <Footer />
           </>
         ),
@@ -139,9 +136,7 @@ const router = createBrowserRouter([
         element: (
           <>
             <Navbar />
-
             <Orders />
-
             <Footer />
           </>
         ),
@@ -157,9 +152,7 @@ const router = createBrowserRouter([
         element: (
           <>
             <Navbar />
-
             <OrderDetails />
-
             <Footer />
           </>
         ),
@@ -177,7 +170,6 @@ const router = createBrowserRouter([
     element: (
       <>
         <Navbar />
-
         <Products />
       </>
     ),
@@ -193,9 +185,7 @@ const router = createBrowserRouter([
     element: (
       <>
         <Navbar />
-
         <ProductDetails />
-
         <Footer />
       </>
     ),
@@ -211,9 +201,7 @@ const router = createBrowserRouter([
     element: (
       <>
         <Navbar />
-
         <Cart />
-
         <Footer />
       </>
     ),
@@ -229,9 +217,7 @@ const router = createBrowserRouter([
     element: (
       <>
         <Navbar />
-
         <Checkout />
-
         <Footer />
       </>
     ),
@@ -247,9 +233,7 @@ const router = createBrowserRouter([
     element: (
       <>
         <Navbar />
-
         <OrderSuccess />
-
         <Footer />
       </>
     ),
@@ -275,7 +259,6 @@ const router = createBrowserRouter([
 
           {
             index: true,
-
             element: <AdminDashboard />,
           },
 
@@ -285,7 +268,6 @@ const router = createBrowserRouter([
 
           {
             path: "products",
-
             element: <AdminProducts />,
           },
 
@@ -295,7 +277,6 @@ const router = createBrowserRouter([
 
           {
             path: "orders",
-
             element: <AdminOrders />,
           },
 
@@ -305,7 +286,6 @@ const router = createBrowserRouter([
 
           {
             path: "orders/:id",
-
             element: <AdminOrderDetails />,
           },
 
@@ -315,7 +295,6 @@ const router = createBrowserRouter([
 
           {
             path: "users",
-
             element: <AdminUsers />,
           },
 
@@ -325,8 +304,16 @@ const router = createBrowserRouter([
 
           {
             path: "users/:id",
-
             element: <AdminUserDetails />,
+          },
+
+          // ==========================================
+          // ADMIN COUPONS
+          // ==========================================
+
+          {
+            path: "coupons",
+            element: <AdminCoupons />,
           },
 
           // ==========================================
@@ -335,7 +322,6 @@ const router = createBrowserRouter([
 
           {
             path: "settings",
-
             element: <AdminSettings />,
           },
         ],

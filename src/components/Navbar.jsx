@@ -6,6 +6,7 @@ import {
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import API from "../api/api";
+import { getImageUrl } from "../api/config";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -17,48 +18,6 @@ const Navbar = () => {
     logout,
     isLoggedIn,
   } = useAuth();
-
-  // =========================================================
-  // API BASE URL
-  // =========================================================
-
-  const API_BASE_URL =
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:5050";
-
-  // =========================================================
-  // IMAGE URL HELPER
-  // =========================================================
-
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) {
-      return "";
-    }
-
-    // External image URL
-    if (
-      imagePath.startsWith("http://") ||
-      imagePath.startsWith("https://") ||
-      imagePath.startsWith("data:")
-    ) {
-      return imagePath;
-    }
-
-    // Backend uploaded image
-    if (
-      imagePath.startsWith("/uploads/") ||
-      imagePath.startsWith("uploads/")
-    ) {
-      const cleanPath =
-        imagePath.startsWith("/")
-          ? imagePath
-          : `/${imagePath}`;
-
-      return `${API_BASE_URL}${cleanPath}`;
-    }
-
-    return imagePath;
-  };
 
   // =========================================================
   // MENUS
@@ -98,25 +57,22 @@ const Navbar = () => {
   // =========================================================
 
   React.useEffect(() => {
-    const loadProducts =
-      async () => {
-        try {
-          const response =
-            await API.get(
-              "/api/products"
-            );
+    const loadProducts = async () => {
+      try {
+        const response = await API.get(
+          "/api/products"
+        );
 
-          setProducts(
-            response.data.products ||
-              []
-          );
-        } catch (error) {
-          console.error(
-            "Failed to load products for search:",
-            error
-          );
-        }
-      };
+        setProducts(
+          response.data.products || []
+        );
+      } catch (error) {
+        console.error(
+          "Failed to load products for search:",
+          error
+        );
+      }
+    };
 
     loadProducts();
   }, []);
@@ -125,54 +81,43 @@ const Navbar = () => {
   // SEARCH RESULTS
   // =========================================================
 
-  const searchResults =
-    React.useMemo(() => {
-      const search =
-        searchText
-          .trim()
-          .toLowerCase();
+  const searchResults = React.useMemo(() => {
+    const search = searchText
+      .trim()
+      .toLowerCase();
 
-      if (!search) {
-        return [];
-      }
+    if (!search) {
+      return [];
+    }
 
-      return products
-        .filter((product) => {
-          const name =
-            product.name?.toLowerCase() ||
-            "";
+    return products
+      .filter((product) => {
+        const name =
+          product.name?.toLowerCase() || "";
 
-          const description =
-            product.description?.toLowerCase() ||
-            "";
+        const description =
+          product.description?.toLowerCase() || "";
 
-          const category =
-            product.category?.toLowerCase() ||
-            "";
+        const category =
+          product.category?.toLowerCase() || "";
 
-          return (
-            name.includes(search) ||
-            description.includes(search) ||
-            category.includes(search)
-          );
-        })
-        .slice(0, 5);
-    }, [
-      searchText,
-      products,
-    ]);
+        return (
+          name.includes(search) ||
+          description.includes(search) ||
+          category.includes(search)
+        );
+      })
+      .slice(0, 5);
+  }, [searchText, products]);
 
   // =========================================================
   // SEARCH
   // =========================================================
 
-  const handleSearch = (
-    event
-  ) => {
+  const handleSearch = (event) => {
     event.preventDefault();
 
-    const search =
-      searchText.trim();
+    const search = searchText.trim();
 
     if (!search) {
       return;
@@ -192,56 +137,41 @@ const Navbar = () => {
   // PRODUCT SEARCH RESULT CLICK
   // =========================================================
 
-  const handleProductClick = (
-    productId
-  ) => {
+  const handleProductClick = (productId) => {
     setSearchText("");
     setSearchOpen(false);
     setMobileMenuOpen(false);
 
-    navigate(
-      `/product/${productId}`
-    );
+    navigate(`/product/${productId}`);
   };
 
   // =========================================================
   // THEME
   // =========================================================
 
-  const [theme, setTheme] =
-    React.useState(() => {
-      if (
-        typeof window !==
-        "undefined"
-      ) {
-        return (
-          localStorage.getItem(
-            "theme"
-          ) || "light"
-        );
-      }
+  const [theme, setTheme] = React.useState(() => {
+    if (typeof window !== "undefined") {
+      return (
+        localStorage.getItem("theme") ||
+        "light"
+      );
+    }
 
-      return "light";
-    });
+    return "light";
+  });
 
   // Apply theme
   React.useEffect(() => {
     const root =
-      window.document
-        .documentElement;
+      window.document.documentElement;
 
     if (theme === "dark") {
       root.classList.add("dark");
     } else {
-      root.classList.remove(
-        "dark"
-      );
+      root.classList.remove("dark");
     }
 
-    localStorage.setItem(
-      "theme",
-      theme
-    );
+    localStorage.setItem("theme", theme);
   }, [theme]);
 
   // Toggle theme
@@ -269,30 +199,24 @@ const Navbar = () => {
   // CLOSE MOBILE MENU
   // =========================================================
 
-  const handleMobileLinkClick =
-    () => {
-      setMobileMenuOpen(false);
-      setSearchOpen(false);
-    };
+  const handleMobileLinkClick = () => {
+    setMobileMenuOpen(false);
+    setSearchOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-black shadow-md dark:bg-gray-900">
-
       <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
-
         {/* =================================================
             MAIN NAVBAR
         ================================================== */}
 
         <div className="flex h-16 items-center gap-3">
-
           {/* Logo */}
 
           <Link
             to="/"
-            onClick={
-              handleMobileLinkClick
-            }
+            onClick={handleMobileLinkClick}
             className="flex shrink-0 items-center gap-2"
           >
             <img
@@ -315,7 +239,6 @@ const Navbar = () => {
             className="ml-16 hidden xl:block"
           >
             <ul className="flex items-center gap-4 text-sm 2xl:gap-6">
-
               <li>
                 <Link
                   className="whitespace-nowrap text-white transition hover:text-orange-500"
@@ -369,7 +292,6 @@ const Navbar = () => {
                   Blog
                 </a>
               </li>
-
             </ul>
           </nav>
 
@@ -382,7 +304,6 @@ const Navbar = () => {
             className="ml-auto hidden flex-1 lg:flex lg:max-w-xs xl:max-w-[220px] 2xl:max-w-[260px]"
           >
             <div className="relative w-full">
-
               <input
                 type="text"
                 value={searchText}
@@ -394,9 +315,7 @@ const Navbar = () => {
                   setSearchOpen(true);
                 }}
                 onFocus={() => {
-                  if (
-                    searchText.trim()
-                  ) {
+                  if (searchText.trim()) {
                     setSearchOpen(true);
                   }
                 }}
@@ -432,17 +351,12 @@ const Navbar = () => {
               {searchOpen &&
                 searchText.trim() && (
                   <div className="absolute left-0 right-0 top-full z-[100] mt-2 overflow-hidden rounded-xl bg-white shadow-xl dark:bg-slate-800">
-
-                    {searchResults.length >
-                    0 ? (
+                    {searchResults.length > 0 ? (
                       <React.Fragment>
-
                         {searchResults.map(
                           (product) => (
                             <button
-                              key={
-                                product._id
-                              }
+                              key={product._id}
                               type="button"
                               onClick={() =>
                                 handleProductClick(
@@ -455,9 +369,7 @@ const Navbar = () => {
                                 src={getImageUrl(
                                   product.image
                                 )}
-                                alt={
-                                  product.name
-                                }
+                                alt={product.name}
                                 className="h-12 w-12 shrink-0 rounded-lg object-cover"
                                 onError={(
                                   event
@@ -469,9 +381,7 @@ const Navbar = () => {
 
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-sm font-semibold text-gray-800 dark:text-white">
-                                  {
-                                    product.name
-                                  }
+                                  {product.name}
                                 </p>
 
                                 <p className="mt-1 text-sm font-bold text-orange-600">
@@ -487,9 +397,7 @@ const Navbar = () => {
                                       ? product.discountedPrice
                                       : product.price ||
                                           0
-                                  ).toFixed(
-                                    2
-                                  )}
+                                  ).toFixed(2)}
                                 </p>
                               </div>
                             </button>
@@ -502,17 +410,14 @@ const Navbar = () => {
                         >
                           View all search results →
                         </button>
-
                       </React.Fragment>
                     ) : (
                       <div className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
                         No products found.
                       </div>
                     )}
-
                   </div>
                 )}
-
             </div>
           </form>
 
@@ -521,14 +426,11 @@ const Navbar = () => {
           ================================================== */}
 
           <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 lg:ml-3">
-
             {/* Authentication - Desktop */}
 
             <div className="hidden xl:block">
-
               {!isLoggedIn ? (
                 <div className="flex items-center gap-2">
-
                   <Link
                     className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-700"
                     to="/Login"
@@ -542,11 +444,9 @@ const Navbar = () => {
                   >
                     Register
                   </Link>
-
                 </div>
               ) : (
                 <div className="relative">
-
                   {/* Profile Button */}
 
                   <button
@@ -565,17 +465,14 @@ const Navbar = () => {
                           user.profilePicture
                         )}
                         alt={
-                          user.name ||
-                          "Profile"
+                          user.name || "Profile"
                         }
                         className="h-9 w-9 rounded-full border-2 border-orange-500 object-cover"
                       />
                     ) : (
                       <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-600 text-lg font-semibold">
                         {user?.name
-                          ?.charAt(
-                            0
-                          )
+                          ?.charAt(0)
                           ?.toUpperCase() ||
                           "U"}
                       </span>
@@ -594,7 +491,6 @@ const Navbar = () => {
 
                   {profileMenuOpen && (
                     <div className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-lg bg-white shadow-xl dark:bg-slate-800">
-
                       <Link
                         to="/profile"
                         onClick={() =>
@@ -621,20 +517,15 @@ const Navbar = () => {
 
                       <button
                         type="button"
-                        onClick={
-                          handleLogout
-                        }
+                        onClick={handleLogout}
                         className="block w-full px-4 py-3 text-left text-sm text-red-600 transition hover:bg-gray-100 dark:hover:bg-slate-700"
                       >
                         🚪 Logout
                       </button>
-
                     </div>
                   )}
-
                 </div>
               )}
-
             </div>
 
             {/* Theme Toggle */}
@@ -719,9 +610,7 @@ const Navbar = () => {
               }
               className="rounded-lg p-2.5 text-white transition hover:bg-gray-800 xl:hidden"
               aria-label="Toggle menu"
-              aria-expanded={
-                mobileMenuOpen
-              }
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? (
                 <svg
@@ -755,7 +644,6 @@ const Navbar = () => {
                 </svg>
               )}
             </button>
-
           </div>
         </div>
 
@@ -765,39 +653,29 @@ const Navbar = () => {
 
         {mobileMenuOpen && (
           <div className="border-t border-gray-800 py-3 xl:hidden">
-
             <div className="w-full max-w-sm">
-
               {/* Mobile Search */}
 
               <form
-                onSubmit={
-                  handleSearch
-                }
+                onSubmit={handleSearch}
                 className="mb-3"
               >
                 <div className="relative">
-
                   <input
                     type="text"
                     value={searchText}
                     onChange={(event) => {
                       setSearchText(
-                        event.target
-                          .value
+                        event.target.value
                       );
 
-                      setSearchOpen(
-                        true
-                      );
+                      setSearchOpen(true);
                     }}
                     onFocus={() => {
                       if (
                         searchText.trim()
                       ) {
-                        setSearchOpen(
-                          true
-                        );
+                        setSearchOpen(true);
                       }
                     }}
                     placeholder="Search products..."
@@ -832,15 +710,11 @@ const Navbar = () => {
                   {searchOpen &&
                     searchText.trim() && (
                       <div className="absolute left-0 right-0 top-full z-[100] mt-2 overflow-hidden rounded-xl bg-white shadow-xl dark:bg-slate-800">
-
                         {searchResults.length >
                         0 ? (
                           <React.Fragment>
-
                             {searchResults.map(
-                              (
-                                product
-                              ) => (
+                              (product) => (
                                 <button
                                   key={
                                     product._id
@@ -889,9 +763,7 @@ const Navbar = () => {
                                           ? product.discountedPrice
                                           : product.price ||
                                               0
-                                      ).toFixed(
-                                        2
-                                      )}
+                                      ).toFixed(2)}
                                     </p>
                                   </div>
                                 </button>
@@ -904,17 +776,14 @@ const Navbar = () => {
                             >
                               View all search results →
                             </button>
-
                           </React.Fragment>
                         ) : (
                           <div className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
                             No products found.
                           </div>
                         )}
-
                       </div>
                     )}
-
                 </div>
               </form>
 
@@ -923,9 +792,7 @@ const Navbar = () => {
               ================================================== */}
 
               <nav aria-label="Mobile Navigation">
-
                 <div className="flex flex-col gap-1">
-
                   <Link
                     to="/Aboutus"
                     onClick={
@@ -985,7 +852,6 @@ const Navbar = () => {
                   >
                     Blog
                   </a>
-
                 </div>
               </nav>
 
@@ -994,10 +860,8 @@ const Navbar = () => {
               ================================================== */}
 
               <div className="mt-3 border-t border-gray-800 pt-3">
-
                 {!isLoggedIn ? (
                   <div className="flex flex-col gap-2">
-
                     <Link
                       to="/Login"
                       onClick={
@@ -1017,11 +881,9 @@ const Navbar = () => {
                     >
                       Register
                     </Link>
-
                   </div>
                 ) : (
                   <div className="space-y-2">
-
                     {/* Mobile Profile */}
 
                     <Link
@@ -1045,9 +907,7 @@ const Navbar = () => {
                       ) : (
                         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-600 font-semibold">
                           {user?.name
-                            ?.charAt(
-                              0
-                            )
+                            ?.charAt(0)
                             ?.toUpperCase() ||
                             "U"}
                         </span>
@@ -1074,22 +934,17 @@ const Navbar = () => {
 
                     <button
                       type="button"
-                      onClick={
-                        handleLogout
-                      }
+                      onClick={handleLogout}
                       className="w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium text-red-400 transition hover:bg-gray-800"
                     >
                       🚪 Logout
                     </button>
-
                   </div>
                 )}
-
               </div>
             </div>
           </div>
         )}
-
       </div>
     </header>
   );

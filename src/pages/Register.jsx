@@ -78,13 +78,12 @@ const Register = () => {
       // REGISTER USER
       // =====================================================
       //
-      // API automatically uses VITE_API_URL.
+      // API uses the centralized base URL configured in:
       //
-      // Local:
-      // http://localhost:5050/register
+      // src/api/config.js
       //
-      // Production:
-      // https://YOUR-BACKEND-URL/register
+      // The endpoint is:
+      // /register
       // =====================================================
 
       const response = await API.post("/register", {
@@ -93,10 +92,7 @@ const Register = () => {
         password: user.password,
       });
 
-      console.log(
-        "Server response:",
-        response.data
-      );
+      console.log("Server response:", response.data);
 
       setStatusMsg({
         type: "success",
@@ -113,10 +109,7 @@ const Register = () => {
         confirmPassword: "",
       });
     } catch (err) {
-      console.error(
-        "Registration error details:",
-        err
-      );
+      console.error("Registration error details:", err);
 
       let msg =
         "Registration failed. Please try again.";
@@ -137,24 +130,27 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-8">
-        <h1 className="text-3xl font-bold text-center text-gray-800">
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-8">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
+
+        {/* PAGE TITLE */}
+
+        <h1 className="text-center text-3xl font-bold text-gray-800">
           Create Account
         </h1>
 
-        <p className="text-center text-gray-500 mt-2 mb-6">
+        <p className="mb-6 mt-2 text-center text-gray-500">
           Register to connect with MongoDB Atlas
         </p>
 
-        {/* Status Message Alert Banner */}
+        {/* STATUS MESSAGE */}
 
         {statusMsg.text && (
           <div
-            className={`p-4 rounded-lg mb-6 text-sm font-medium transition-all ${
+            className={`mb-6 rounded-lg border p-4 text-sm font-medium transition-all ${
               statusMsg.type === "success"
-                ? "bg-green-100 border border-green-400 text-green-800"
-                : "bg-red-100 border border-red-400 text-red-800"
+                ? "border-green-400 bg-green-100 text-green-800"
+                : "border-red-400 bg-red-100 text-red-800"
             }`}
           >
             {statusMsg.type === "success"
@@ -165,14 +161,17 @@ const Register = () => {
           </div>
         )}
 
+        {/* REGISTRATION FORM */}
+
         <form
           onSubmit={handleSubmit}
           className="space-y-5"
         >
-          {/* Full Name */}
+
+          {/* FULL NAME */}
 
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="mb-2 block font-medium text-gray-700">
               Full Name
             </label>
 
@@ -182,15 +181,15 @@ const Register = () => {
               placeholder="John Doe"
               value={user.name}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
 
-          {/* Email */}
+          {/* EMAIL */}
 
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="mb-2 block font-medium text-gray-700">
               Email
             </label>
 
@@ -200,15 +199,15 @@ const Register = () => {
               placeholder="john@example.com"
               value={user.email}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
 
-          {/* Password */}
+          {/* PASSWORD */}
 
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="mb-2 block font-medium text-gray-700">
               Password
             </label>
 
@@ -223,7 +222,7 @@ const Register = () => {
                 placeholder="Enter password"
                 value={user.password}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 pr-12 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
 
@@ -234,7 +233,7 @@ const Register = () => {
                     !showPassword
                   )
                 }
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-sm font-semibold px-2 py-1 select-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 select-none px-2 py-1 text-sm font-semibold text-gray-500 hover:text-gray-700"
               >
                 {showPassword
                   ? "🙈 Hide"
@@ -243,10 +242,10 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Confirm Password */}
+          {/* CONFIRM PASSWORD */}
 
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="mb-2 block font-medium text-gray-700">
               Confirm Password
             </label>
 
@@ -261,7 +260,7 @@ const Register = () => {
                 placeholder="Confirm password"
                 value={user.confirmPassword}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 pr-12 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
 
@@ -272,7 +271,7 @@ const Register = () => {
                     !showConfirmPassword
                   )
                 }
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-sm font-semibold px-2 py-1 select-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 select-none px-2 py-1 text-sm font-semibold text-gray-500 hover:text-gray-700"
               >
                 {showConfirmPassword
                   ? "🙈 Hide"
@@ -281,14 +280,14 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Submit */}
+          {/* SUBMIT */}
 
           <button
             type="submit"
             disabled={loading}
-            className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition duration-300 flex items-center justify-center ${
+            className={`flex w-full items-center justify-center rounded-lg bg-blue-600 py-3 font-semibold text-white transition duration-300 hover:bg-blue-700 ${
               loading
-                ? "opacity-70 cursor-not-allowed"
+                ? "cursor-not-allowed opacity-70"
                 : ""
             }`}
           >
@@ -304,14 +303,14 @@ const Register = () => {
           </button>
         </form>
 
-        {/* Login Link */}
+        {/* LOGIN LINK */}
 
-        <p className="text-center text-gray-600 mt-6">
+        <p className="mt-6 text-center text-gray-600">
           Already have an account?{" "}
 
           <Link
             to="/Login"
-            className="text-blue-600 hover:text-blue-700 font-semibold"
+            className="font-semibold text-blue-600 hover:text-blue-700"
           >
             Login
           </Link>
@@ -322,3 +321,4 @@ const Register = () => {
 };
 
 export default Register;
+

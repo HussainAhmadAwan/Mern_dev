@@ -7,7 +7,9 @@ const OrderSuccess = () => {
   // ==========================================
 
   const savedOrder =
-    sessionStorage.getItem("lastOrder");
+    sessionStorage.getItem(
+      "lastOrder"
+    );
 
   let order = null;
 
@@ -35,22 +37,26 @@ const OrderSuccess = () => {
 
   const currencyCode =
     String(
-      order?.currencyCode || "USD"
+      order?.currencyCode ||
+        "USD"
     )
       .trim()
       .toUpperCase() || "USD";
 
   // ==========================================
-  // FORMAT ORDER PRICE
+  // FORMAT PRICE
   // ==========================================
 
-  const formatOrderPrice = (amount) => {
-    const numericAmount = Number(
-      amount
-    );
+  const formatOrderPrice = (
+    amount
+  ) => {
+    const numericAmount =
+      Number(amount);
 
     const safeAmount =
-      Number.isFinite(numericAmount)
+      Number.isFinite(
+        numericAmount
+      )
         ? numericAmount
         : 0;
 
@@ -71,13 +77,23 @@ const OrderSuccess = () => {
     order?.subtotal || 0
   );
 
-  const deliveryCharge = Number(
-    order?.deliveryCharge || 0
-  );
+  const couponDiscount =
+    Number(
+      order?.couponDiscount ||
+        0
+    );
+
+  const deliveryCharge =
+    Number(
+      order?.deliveryCharge ||
+        0
+    );
 
   const totalPrice = Number(
     order?.totalPrice ??
-      subtotal + deliveryCharge
+      subtotal -
+        couponDiscount +
+        deliveryCharge
   );
 
   const totalProducts = Number(
@@ -94,28 +110,28 @@ const OrderSuccess = () => {
   );
 
   // ==========================================
-  // CUSTOMER INFORMATION
+  // CUSTOMER
   // ==========================================
 
   const customerName =
     `${order?.customer?.firstName || ""} ${
       order?.customer?.lastName || ""
-    }`.trim() || "Customer";
+    }`.trim() ||
+    "Customer";
 
   const customerEmail =
-    order?.customer?.email || "N/A";
+    order?.customer?.email ||
+    "N/A";
 
   const customerPhone =
-    order?.customer?.phone || "N/A";
+    order?.customer?.phone ||
+    "N/A";
 
   return (
     <section className="min-h-screen w-full min-w-0 overflow-x-hidden bg-gray-50 px-4 py-8 dark:bg-slate-900 sm:px-6 sm:py-10">
       <div className="mx-auto flex w-full max-w-2xl min-w-0 items-center justify-center">
         <div className="w-full min-w-0 rounded-2xl bg-white p-5 shadow-lg dark:bg-slate-800 sm:p-7">
-          {/* ==========================================
-              SUCCESS HEADER
-          ========================================== */}
-
+          {/* SUCCESS HEADER */}
           <div className="text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 sm:h-[72px] sm:w-[72px]">
               <span className="text-3xl font-bold text-green-600 sm:text-4xl">
@@ -134,24 +150,19 @@ const OrderSuccess = () => {
             </p>
           </div>
 
-          {/* ==========================================
-              ORDER NUMBER
-          ========================================== */}
-
+          {/* ORDER NUMBER */}
           <div className="mt-5 min-w-0 rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 text-center dark:border-slate-600 dark:bg-slate-700">
             <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-300">
               Order Number
             </p>
 
             <p className="mt-1 break-all text-xl font-bold text-orange-600 sm:text-2xl">
-              #{order?.orderId || "N/A"}
+              #{order?.orderId ||
+                "N/A"}
             </p>
           </div>
 
-          {/* ==========================================
-              CURRENCY
-          ========================================== */}
-
+          {/* CURRENCY */}
           <div className="mt-3 text-center">
             <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 dark:bg-slate-700 dark:text-gray-300">
               Currency:{" "}
@@ -160,10 +171,7 @@ const OrderSuccess = () => {
             </span>
           </div>
 
-          {/* ==========================================
-              CUSTOMER INFORMATION
-          ========================================== */}
-
+          {/* CUSTOMER INFORMATION */}
           <div className="mt-4 min-w-0 rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-slate-700 dark:bg-slate-900">
             <h2 className="mb-3 text-sm font-bold text-gray-900 dark:text-white">
               Customer Information
@@ -177,7 +185,9 @@ const OrderSuccess = () => {
 
                 <p
                   className="mt-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200"
-                  title={customerName}
+                  title={
+                    customerName
+                  }
                 >
                   {customerName}
                 </p>
@@ -190,7 +200,9 @@ const OrderSuccess = () => {
 
                 <p
                   className="mt-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200"
-                  title={customerEmail}
+                  title={
+                    customerEmail
+                  }
                 >
                   {customerEmail}
                 </p>
@@ -203,7 +215,9 @@ const OrderSuccess = () => {
 
                 <p
                   className="mt-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200"
-                  title={customerPhone}
+                  title={
+                    customerPhone
+                  }
                 >
                   {customerPhone}
                 </p>
@@ -211,10 +225,7 @@ const OrderSuccess = () => {
             </div>
           </div>
 
-          {/* ==========================================
-              ORDER SUMMARY
-          ========================================== */}
-
+          {/* ORDER SUMMARY */}
           <div className="mt-4 min-w-0 rounded-xl border border-gray-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
             <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
               <h2 className="min-w-0 text-sm font-bold text-gray-900 dark:text-white">
@@ -252,6 +263,27 @@ const OrderSuccess = () => {
                 </span>
               </div>
 
+              {order?.coupon &&
+                couponDiscount >
+                  0 && (
+                  <div className="flex items-center justify-between gap-4 text-green-600 dark:text-green-400">
+                    <span className="min-w-0">
+                      Coupon{" "}
+                      <span className="font-semibold">
+                        {order.coupon
+                          .code}
+                      </span>
+                    </span>
+
+                    <span className="shrink-0 font-medium">
+                      -
+                      {formatOrderPrice(
+                        couponDiscount
+                      )}
+                    </span>
+                  </div>
+                )}
+
               <div className="flex items-center justify-between gap-4 text-gray-600 dark:text-gray-300">
                 <span>
                   Delivery Charges
@@ -280,10 +312,7 @@ const OrderSuccess = () => {
             </div>
           </div>
 
-          {/* ==========================================
-              DELIVERY INFORMATION
-          ========================================== */}
-
+          {/* DELIVERY INFORMATION */}
           <div className="mt-4 flex min-w-0 items-center gap-3 rounded-xl bg-green-50 p-4 dark:bg-green-900/20">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/40">
               <span className="text-lg text-green-600">
@@ -303,10 +332,7 @@ const OrderSuccess = () => {
             </div>
           </div>
 
-          {/* ==========================================
-              BUTTONS
-          ========================================== */}
-
+          {/* BUTTONS */}
           <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2">
             <Link
               to="/Product_page"

@@ -1,38 +1,40 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../api/axios";
+import { getImageUrl } from "../api/config";
 
 const AdminUserDetails = () => {
-
-  const getProfilePictureUrl = (profilePicture) => {
-      if (!profilePicture) return "";
-    
-      if (profilePicture.startsWith("http")) {
-        return profilePicture;
-      }
-    
-      return `http://localhost:5050${profilePicture}`;
-    };
-
-
   const { id } = useParams();
 
-  // User data
+  // ==========================================
+  // USER DATA
+  // ==========================================
+
   const [user, setUser] = useState(null);
 
-  // Loading state
-  const [loading, setLoading] = useState(true);
+  // ==========================================
+  // LOADING / ERROR
+  // ==========================================
 
-  // Error state
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Edit mode
+  // ==========================================
+  // EDIT MODE
+  // ==========================================
+
   const [editing, setEditing] = useState(false);
 
-  // Saving state
+  // ==========================================
+  // SAVING STATE
+  // ==========================================
+
   const [saving, setSaving] = useState(false);
 
-  // Form data
+  // ==========================================
+  // FORM DATA
+  // ==========================================
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -40,13 +42,20 @@ const AdminUserDetails = () => {
     role: "customer",
   });
 
+  // ==========================================
+  // PROFILE PICTURE
+  // ==========================================
 
-  const [profilePictureFile, setProfilePictureFile] = useState(null);
-  const [profilePicturePreview, setProfilePicturePreview] = useState("");
+  const [profilePictureFile, setProfilePictureFile] =
+    useState(null);
 
+  const [profilePicturePreview, setProfilePicturePreview] =
+    useState("");
 
+  // ==========================================
+  // FETCH USER
+  // ==========================================
 
-  // Fetch user
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -63,7 +72,8 @@ const AdminUserDetails = () => {
         );
 
         if (response.data.success) {
-          const fetchedUser = response.data.user;
+          const fetchedUser =
+            response.data.user;
 
           setUser(fetchedUser);
 
@@ -71,8 +81,25 @@ const AdminUserDetails = () => {
             name: fetchedUser.name || "",
             email: fetchedUser.email || "",
             password: "",
-            role: fetchedUser.role || "customer",
+            role:
+              fetchedUser.role ||
+              "customer",
           });
+
+          setProfilePictureFile(null);
+
+          setProfilePicturePreview(
+            fetchedUser.profilePicture
+              ? getImageUrl(
+                  fetchedUser.profilePicture
+                )
+              : ""
+          );
+        } else {
+          setError(
+            response.data.message ||
+              "Failed to load user details."
+          );
         }
       } catch (error) {
         console.error(
@@ -92,130 +119,186 @@ const AdminUserDetails = () => {
     fetchUser();
   }, [id]);
 
-  // Handle input
-  const handleChange = (event) => {
-    const { name, value } = event.target;
+  // ==========================================
+  // HANDLE INPUT
+  // ==========================================
 
-    setFormData((previousData) => ({
-      ...previousData,
-      [name]: value,
-    }));
+  const handleChange = (event) => {
+    const { name, value } =
+      event.target;
+
+    setFormData(
+      (previousData) => ({
+        ...previousData,
+        [name]: value,
+      })
+    );
   };
 
+  // ==========================================
+  // HANDLE PROFILE PICTURE CHANGE
+  // ==========================================
 
-   // Handle profile picture change
-     const handleProfilePictureChange = (e) => {
-       const file = e.target.files?.[0];
-     
-       if (!file) {
-         return;
-       }
-     
-       if (!file.type.startsWith("image/")) {
-         setError("Please select a valid image file.");
-         return;
-       }
-     
-       if (file.size > 5 * 1024 * 1024) {
-         setError("Profile picture must be smaller than 5MB.");
-         return;
-       }
-     
-       setProfilePictureFile(file);
-       setError("");
-     
-       const previewUrl = URL.createObjectURL(file);
-       setProfilePicturePreview(previewUrl);
-     };
+  const handleProfilePictureChange = (
+    event
+  ) => {
+    const file =
+      event.target.files?.[0];
 
+    if (!file) {
+      return;
+    }
 
-  // Save user
-     const handleSave = async (event) => {
-     event.preventDefault();
-   
-     try {
-       setSaving(true);
-       setError("");
-   
-       const formDataToSend = new FormData();
-   
-       formDataToSend.append("name", formData.name);
-       formDataToSend.append("email", formData.email);
-       formDataToSend.append("password", formData.password);
-       formDataToSend.append("role", formData.role);
-   
-       if (profilePictureFile) {
-         formDataToSend.append(
-           "profilePicture",
-           profilePictureFile
-         );
-       }
-   
-       const response = await api.put(
-         `/admin/users/${id}`,
-         formDataToSend
-       );
-   
-       console.log(
-         "Updated User:",
-         response.data
-       );
-   
-       if (response.data.success) {
-         setUser(response.data.user);
-   
-         setFormData({
-           name: response.data.user.name || "",
-           email: response.data.user.email || "",
-           password: "",
-           role:
-             response.data.user.role ||
-             "customer",
-         });
-   
-         setProfilePictureFile(null);
-   
-         if (response.data.user.profilePicture) {
-           setProfilePicturePreview(
-             getProfilePictureUrl(
-               response.data.user.profilePicture
-             )
-           );
-         } else {
-           setProfilePicturePreview("");
-         }
-   
-         setEditing(false);
-       }
-     } catch (error) {
-       console.error(
-         "Failed to update user:",
-         error
-       );
-   
-       setError(
-         error.response?.data?.message ||
-           "Failed to update user."
-       );
-     } finally {
-       setSaving(false);
-     }
-   };
+    if (!file.type.startsWith("image/")) {
+      setError(
+        "Please select a valid image file."
+      );
 
-  // Cancel edit
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError(
+        "Profile picture must be smaller than 5MB."
+      );
+
+      event.target.value = "";
+      return;
+    }
+
+    setProfilePictureFile(file);
+    setError("");
+
+    const previewUrl =
+      URL.createObjectURL(file);
+
+    setProfilePicturePreview(
+      previewUrl
+    );
+  };
+
+  // ==========================================
+  // SAVE USER
+  // ==========================================
+
+  const handleSave = async (event) => {
+    event.preventDefault();
+
+    try {
+      setSaving(true);
+      setError("");
+
+      const formDataToSend =
+        new FormData();
+
+      formDataToSend.append(
+        "name",
+        formData.name
+      );
+
+      formDataToSend.append(
+        "email",
+        formData.email
+      );
+
+      formDataToSend.append(
+        "password",
+        formData.password
+      );
+
+      formDataToSend.append(
+        "role",
+        formData.role
+      );
+
+      if (profilePictureFile) {
+        formDataToSend.append(
+          "profilePicture",
+          profilePictureFile
+        );
+      }
+
+      const response = await api.put(
+        `/admin/users/${id}`,
+        formDataToSend
+      );
+
+      console.log(
+        "Updated User:",
+        response.data
+      );
+
+      if (response.data.success) {
+        const updatedUser =
+          response.data.user;
+
+        setUser(updatedUser);
+
+        setFormData({
+          name:
+            updatedUser.name || "",
+          email:
+            updatedUser.email || "",
+          password: "",
+          role:
+            updatedUser.role ||
+            "customer",
+        });
+
+        setProfilePictureFile(null);
+
+        setProfilePicturePreview(
+          updatedUser.profilePicture
+            ? getImageUrl(
+                updatedUser.profilePicture
+              )
+            : ""
+        );
+
+        setEditing(false);
+      } else {
+        setError(
+          response.data.message ||
+            "Failed to update user."
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Failed to update user:",
+        error
+      );
+
+      setError(
+        error.response?.data?.message ||
+          "Failed to update user."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ==========================================
+  // CANCEL EDIT
+  // ==========================================
+
   const handleCancel = () => {
     setFormData({
       name: user.name || "",
       email: user.email || "",
       password: "",
-      role: user.role || "customer",
+      role:
+        user.role ||
+        "customer",
     });
 
     setProfilePictureFile(null);
 
     setProfilePicturePreview(
       user.profilePicture
-        ? getProfilePictureUrl(user.profilePicture)
+        ? getImageUrl(
+            user.profilePicture
+          )
         : ""
     );
 
@@ -223,10 +306,32 @@ const AdminUserDetails = () => {
     setError("");
   };
 
-  // Loading state
+  // ==========================================
+  // CLEANUP OBJECT URL
+  // ==========================================
+
+  useEffect(() => {
+    return () => {
+      if (
+        profilePicturePreview &&
+        profilePicturePreview.startsWith(
+          "blob:"
+        )
+      ) {
+        URL.revokeObjectURL(
+          profilePicturePreview
+        );
+      }
+    };
+  }, [profilePicturePreview]);
+
+  // ==========================================
+  // LOADING STATE
+  // ==========================================
+
   if (loading) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-8">
+      <div className="w-full min-w-0 overflow-hidden rounded-xl bg-white p-6 shadow dark:bg-slate-800 sm:p-8">
         <p className="text-orange-600">
           Loading user details...
         </p>
@@ -234,17 +339,20 @@ const AdminUserDetails = () => {
     );
   }
 
-  // Error state
+  // ==========================================
+  // ERROR STATE
+  // ==========================================
+
   if (error && !user) {
     return (
-      <div>
-        <div className="bg-red-100 border border-red-300 text-red-700 rounded-xl p-5 mb-6">
+      <div className="w-full min-w-0 overflow-hidden">
+        <div className="mb-6 break-words rounded-xl border border-red-300 bg-red-100 p-5 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
           {error}
         </div>
 
         <Link
           to="/admin/users"
-          className="inline-block rounded-lg bg-gray-800 px-5 py-3 text-white hover:bg-gray-700"
+          className="inline-flex items-center rounded-lg bg-gray-800 px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-700"
         >
           ← Back to Users
         </Link>
@@ -252,120 +360,167 @@ const AdminUserDetails = () => {
     );
   }
 
-  // User not found
+  // ==========================================
+  // USER NOT FOUND
+  // ==========================================
+
   if (!user) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-8">
-        <p className="text-gray-500">
+      <div className="w-full min-w-0 overflow-hidden rounded-xl bg-white p-6 shadow dark:bg-slate-800 sm:p-8">
+        <p className="text-gray-500 dark:text-gray-400">
           User not found.
         </p>
+
+        <Link
+          to="/admin/users"
+          className="mt-5 inline-flex items-center rounded-lg bg-gray-800 px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-700"
+        >
+          ← Back to Users
+        </Link>
       </div>
     );
   }
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+    <div className="w-full min-w-0 max-w-full space-y-6 overflow-x-hidden lg:space-y-8">
+
+      {/* ==========================================
+          HEADER
+      ========================================== */}
+
+      <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="break-words text-2xl font-bold text-gray-800 dark:text-white sm:text-3xl">
             User Details
           </h1>
 
-          <p className="text-gray-500 mt-2">
+          <p className="mt-2 break-all text-sm text-gray-500 dark:text-gray-400">
             User ID: {user._id}
           </p>
         </div>
 
-        <div className="flex gap-3">
-          {/* Edit button */}
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row">
+          {/* Edit Button */}
+
           {!editing && (
             <button
+              type="button"
               onClick={() => {
-                        setEditing(true);
-                      
-                        setProfilePictureFile(null);
-                      
-                        setProfilePicturePreview(
-                          user.profilePicture
-                            ? getProfilePictureUrl(user.profilePicture)
-                            : ""
-                        );
-                      }}
-              className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700"
+                setEditing(true);
+
+                setProfilePictureFile(
+                  null
+                );
+
+                setProfilePicturePreview(
+                  user.profilePicture
+                    ? getImageUrl(
+                        user.profilePicture
+                      )
+                    : ""
+                );
+
+                setError("");
+              }}
+              className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-blue-700"
             >
               ✏️ Edit User
             </button>
           )}
 
+          {/* Back */}
+
           <Link
             to="/admin/users"
-            className="rounded-lg bg-gray-800 px-5 py-3 text-sm font-medium text-white hover:bg-gray-700"
+            className="rounded-lg bg-gray-800 px-5 py-3 text-center text-sm font-medium text-white transition hover:bg-gray-700"
           >
             ← Back to Users
           </Link>
         </div>
       </div>
 
-      {/* Error */}
+      {/* ==========================================
+          ERROR MESSAGE
+      ========================================== */}
+
       {error && (
-        <div className="bg-red-100 border border-red-300 text-red-700 rounded-xl p-4 mb-6">
+        <div className="break-words rounded-xl border border-red-300 bg-red-100 p-4 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
           {error}
         </div>
       )}
 
+      {/* ==========================================
+          EDIT MODE
+      ========================================== */}
+
       {editing ? (
         <form
           onSubmit={handleSave}
-          className="bg-white dark:bg-slate-800 rounded-xl shadow p-6"
+          className="w-full min-w-0 overflow-hidden rounded-xl bg-white p-5 shadow dark:bg-slate-800 sm:p-6 lg:p-8"
         >
-          <h2 className="text-xl font-bold dark:text-white mb-6">
+          <h2 className="mb-6 break-words text-xl font-bold text-gray-800 dark:text-white">
             Edit User
           </h2>
 
-              {/* Profile Picture */}
-               <div className="mb-6">
-                 <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
-                   Profile Picture
-                 </label>
-               
-                 <div className="flex items-center gap-5">
-                   {profilePicturePreview ? (
-                     <img
-                       src={profilePicturePreview}
-                       alt="Profile Preview"
-                       className="w-24 h-24 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600"
-                     />
-                   ) : (
-                     <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-2xl font-bold text-gray-600 dark:text-gray-300">
-                       {user.name?.charAt(0)?.toUpperCase() || "U"}
-                     </div>
-                   )}
-               
-                   <div>
-                     <input
-                       type="file"
-                       accept="image/*"
-                       onChange={handleProfilePictureChange}
-                       className="block w-full text-sm text-gray-700 dark:text-gray-300
-                                  file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
-                                  file:text-sm file:font-semibold file:bg-blue-600 file:text-white
-                                  hover:file:bg-blue-700 dark:file:bg-blue-500 dark:hover:file:bg-blue-600
-                                  cursor-pointer"
-                     />
-               
-                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                       Select a new image to change the profile picture. Maximum 5MB.
-                     </p>
-                   </div>
-                 </div>
-               </div>
+          {/* ==========================================
+              PROFILE PICTURE
+          ========================================== */}
 
+          <div className="mb-8">
+            <label className="mb-3 block text-sm font-medium text-gray-600 dark:text-gray-300">
+              Profile Picture
+            </label>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex min-w-0 flex-col items-start gap-5 sm:flex-row sm:items-center">
+              {profilePicturePreview ? (
+                <img
+                  src={
+                    profilePicturePreview
+                  }
+                  alt="Profile Preview"
+                  className="h-24 w-24 shrink-0 rounded-full border-2 border-gray-300 object-cover dark:border-gray-600"
+                />
+              ) : (
+                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gray-200 text-2xl font-bold text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                  {user.name
+                    ?.charAt(0)
+                    ?.toUpperCase() ||
+                    "U"}
+                </div>
+              )}
+
+              <div className="min-w-0 w-full">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={
+                    handleProfilePictureChange
+                  }
+                  className="block w-full max-w-full cursor-pointer text-sm text-gray-700 dark:text-gray-300
+                             file:mr-4 file:rounded-lg file:border-0 file:bg-blue-600
+                             file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white
+                             hover:file:bg-blue-700 dark:file:bg-blue-500 dark:hover:file:bg-blue-600"
+                />
+
+                <p className="mt-2 break-words text-xs text-gray-500 dark:text-gray-400">
+                  Select a new image to change
+                  the profile picture. Maximum
+                  5MB.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* ==========================================
+              FORM FIELDS
+          ========================================== */}
+
+          <div className="grid min-w-0 grid-cols-1 gap-6 md:grid-cols-2">
+
             {/* User ID */}
-            <div>
-              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+
+            <div className="min-w-0">
+              <label className="mb-2 block text-sm font-medium text-gray-600 dark:text-gray-300">
                 User ID
               </label>
 
@@ -373,17 +528,18 @@ const AdminUserDetails = () => {
                 type="text"
                 value={user._id}
                 disabled
-                className="w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-3 text-gray-500 cursor-not-allowed"
+                className="w-full min-w-0 rounded-lg border border-gray-300 bg-gray-100 px-4 py-3 text-gray-500 outline-none cursor-not-allowed dark:border-gray-600 dark:bg-slate-700 dark:text-gray-400"
               />
 
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 User ID cannot be changed.
               </p>
             </div>
 
             {/* Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+
+            <div className="min-w-0">
+              <label className="mb-2 block text-sm font-medium text-gray-600 dark:text-gray-300">
                 Name
               </label>
 
@@ -393,13 +549,14 @@ const AdminUserDetails = () => {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
               />
             </div>
 
             {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+
+            <div className="min-w-0">
+              <label className="mb-2 block text-sm font-medium text-gray-600 dark:text-gray-300">
                 Email
               </label>
 
@@ -409,13 +566,14 @@ const AdminUserDetails = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
               />
             </div>
 
             {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+
+            <div className="min-w-0">
+              <label className="mb-2 block text-sm font-medium text-gray-600 dark:text-gray-300">
                 New Password
               </label>
 
@@ -425,13 +583,19 @@ const AdminUserDetails = () => {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Leave blank to keep current password"
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
               />
+
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Leave blank if you do not want to
+                change the password.
+              </p>
             </div>
 
             {/* Role */}
-            <div>
-              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+
+            <div className="min-w-0">
+              <label className="mb-2 block text-sm font-medium text-gray-600 dark:text-gray-300">
                 Role
               </label>
 
@@ -439,7 +603,7 @@ const AdminUserDetails = () => {
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
+                className="w-full min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
               >
                 <option
                   value="customer"
@@ -458,12 +622,15 @@ const AdminUserDetails = () => {
             </div>
           </div>
 
-          {/* Buttons */}
-          <div className="flex gap-3 mt-8">
+          {/* ==========================================
+              BUTTONS
+          ========================================== */}
+
+          <div className="mt-8 flex min-w-0 flex-col gap-3 sm:flex-row">
             <button
               type="submit"
               disabled={saving}
-              className="rounded-lg bg-green-600 px-6 py-3 font-medium text-white hover:bg-green-700 disabled:opacity-50"
+              className="rounded-lg bg-green-600 px-6 py-3 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving
                 ? "Saving..."
@@ -474,119 +641,150 @@ const AdminUserDetails = () => {
               type="button"
               onClick={handleCancel}
               disabled={saving}
-              className="rounded-lg bg-gray-600 px-6 py-3 font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+              className="rounded-lg bg-gray-600 px-6 py-3 font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               ❌ Cancel
             </button>
           </div>
         </form>
       ) : (
-        /* View mode */
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-6">
 
-              {/* Profile Picture */}
-                  <div className="flex items-center gap-5 mb-8">
-                    {user.profilePicture ? (
-                      <img
-                        src={getProfilePictureUrl(user.profilePicture)}
-                        alt={user.name}
-                        className="w-24 h-24 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600"
-                      />
-                    ) : (
-                      <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-2xl font-bold text-gray-600 dark:text-gray-300">
-                        {user.name?.charAt(0)?.toUpperCase() || "U"}
-                      </div>
-                    )}
-                  
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Profile Picture
-                      </p>
-                  
-                      <p className="text-lg font-semibold mt-1 dark:text-white">
-                        {user.name}
-                      </p>
-                    </div>
-                  </div>
+        /* ==========================================
+           VIEW MODE
+        ========================================== */
 
-          <h2 className="text-xl font-bold dark:text-white mb-6">
+        <div className="w-full min-w-0 overflow-hidden rounded-xl bg-white p-5 shadow dark:bg-slate-800 sm:p-6 lg:p-8">
+
+          {/* ==========================================
+              PROFILE PICTURE
+          ========================================== */}
+
+          <div className="mb-8 flex min-w-0 flex-col items-start gap-5 sm:flex-row sm:items-center">
+            {user.profilePicture ? (
+              <img
+                src={getImageUrl(
+                  user.profilePicture
+                )}
+                alt={
+                  user.name ||
+                  "User Profile"
+                }
+                className="h-24 w-24 shrink-0 rounded-full border-2 border-gray-300 object-cover dark:border-gray-600"
+              />
+            ) : (
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gray-200 text-2xl font-bold text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                {user.name
+                  ?.charAt(0)
+                  ?.toUpperCase() ||
+                  "U"}
+              </div>
+            )}
+
+            <div className="min-w-0">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Profile Picture
+              </p>
+
+              <p className="mt-1 break-words text-lg font-semibold text-gray-800 dark:text-white">
+                {user.name}
+              </p>
+            </div>
+          </div>
+
+          {/* ==========================================
+              ACCOUNT INFORMATION
+          ========================================== */}
+
+          <h2 className="mb-6 break-words text-xl font-bold text-gray-800 dark:text-white">
             Account Information
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid min-w-0 grid-cols-1 gap-6 md:grid-cols-2">
+
             {/* User ID */}
-            <div>
-              <p className="text-sm text-gray-500">
+
+            <div className="min-w-0">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 User ID
               </p>
 
-              <p className="font-mono font-medium mt-1 break-all dark:text-white">
+              <p className="mt-1 break-all font-mono font-medium text-gray-800 dark:text-white">
                 {user._id}
               </p>
             </div>
 
             {/* Name */}
-            <div>
-              <p className="text-sm text-gray-500">
+
+            <div className="min-w-0">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Name
               </p>
 
-              <p className="font-medium mt-1 dark:text-white">
-                {user.name}
+              <p className="mt-1 break-words font-medium text-gray-800 dark:text-white">
+                {user.name || "N/A"}
               </p>
             </div>
 
             {/* Email */}
-            <div>
-              <p className="text-sm text-gray-500">
+
+            <div className="min-w-0">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Email
               </p>
 
-              <p className="font-medium mt-1 dark:text-white">
-                {user.email}
+              <p className="mt-1 break-all font-medium text-gray-800 dark:text-white">
+                {user.email || "N/A"}
               </p>
             </div>
 
             {/* Role */}
-            <div>
-              <p className="text-sm text-gray-500">
+
+            <div className="min-w-0">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Role
               </p>
 
               <span
-                className={`inline-flex mt-1 rounded-full px-3 py-1 text-sm font-medium ${
+                className={`mt-1 inline-flex rounded-full px-3 py-1 text-sm font-medium ${
                   user.role === "admin"
                     ? "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"
                     : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200"
                 }`}
               >
-                {user.role || "customer"}
+                {user.role ||
+                  "customer"}
               </span>
             </div>
 
             {/* Created */}
-            <div>
-              <p className="text-sm text-gray-500">
+
+            <div className="min-w-0">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Registered
               </p>
 
-              <p className="font-medium mt-1 dark:text-white">
-                {new Date(
-                  user.createdAt
-                ).toLocaleString()}
+              <p className="mt-1 break-words font-medium text-gray-800 dark:text-white">
+                {user.createdAt
+                  ? new Date(
+                      user.createdAt
+                    ).toLocaleString()
+                  : "N/A"}
               </p>
             </div>
 
             {/* Updated */}
-            <div>
-              <p className="text-sm text-gray-500">
+
+            <div className="min-w-0">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Last Updated
               </p>
 
-              <p className="font-medium mt-1 dark:text-white">
-                {new Date(
-                  user.updatedAt
-                ).toLocaleString()}
+              <p className="mt-1 break-words font-medium text-gray-800 dark:text-white">
+                {user.updatedAt
+                  ? new Date(
+                      user.updatedAt
+                    ).toLocaleString()
+                  : "N/A"}
               </p>
             </div>
           </div>
